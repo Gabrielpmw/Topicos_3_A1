@@ -1,0 +1,65 @@
+﻿@model restaurante.ViewModels.UsuarioCadastroViewModel
+@{
+}
+<div class="modal-dialog">
+    <div class="modal-content" style="background-color: #1a2238; color: white;">
+        <div class="modal-header" style="border-bottom: none;">
+            <h5 class="modal-title" style="color: #d4af37; font-weight: bold;">Cadastrar</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            
+            <form asp-controller="Conta" asp-action="Cadastrar" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Nome" class="form-label"></label>
+                        <input asp-for="Nome" class="form-control" style="background-color: #2a3454; border: none; color: white;" />
+                        <span asp-validation-for="Nome" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Sobrenome" class="form-label"></label>
+                        <input asp-for="Sobrenome" class="form-control" style="background-color: #2a3454; border: none; color: white;" />
+                        <span asp-validation-for="Sobrenome" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="NomeUsuario" class="form-label"></label>
+                    <input asp-for="NomeUsuario" class="form-control" style="background-color: #2a3454; border: none; color: white;" />
+                    <span asp-validation-for="NomeUsuario" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CPF" class="form-label"></label>
+                    <input asp-for="CPF" class="form-control" placeholder="000.000.000-00" style="background-color: #2a3454; border: none; color: white;" />
+                    <span asp-validation-for="CPF" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Senha" class="form-label"></label>
+                    <input asp-for="Senha" class="form-control" style="background-color: #2a3454; border: none; color: white;" />
+                    <span asp-validation-for="Senha" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="ConfirmarSenha" class="form-label"></label>
+                    <input asp-for="ConfirmarSenha" class="form-control" style="background-color: #2a3454; border: none; color: white;" />
+                    <span asp-validation-for="ConfirmarSenha" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn w-100" style="background-color: #d4af37; color: #1a2238; font-weight: bold;">
+                    Cadastrar
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
