@@ -21,7 +21,6 @@ C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\rjsmcsht
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\scopedcss\bundle\restaurante.styles.css
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\scopedcss\projectbundle\restaurante.bundle.scp.css
-C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\ywre3bs6cj-{0}-b9sayid5wm-b9sayid5wm.gz
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\clog4byyfj-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\k5sxh34ud4-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\te5oigfelq-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -223,3 +222,7 @@ C:\Users\gabriel\source\repos\restaurante\restaurante\bin\Debug\net10.0\runtimes
 C:\Users\gabriel\source\repos\restaurante\restaurante\bin\Debug\net10.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\restaura.A34C02FC.Up2Date
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+C:\Users\gabriel\source\repos\restaurante\restaurante\bin\Debug\net10.0\BCrypt.Net-Next.dll
+C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\restaurante.sourcelink.json
+C:\Users\gabriel\source\repos\restaurante\restaurante\bin\Debug\net10.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\ywre3bs6cj-{0}-lme11cwg1f-lme11cwg1f.gz

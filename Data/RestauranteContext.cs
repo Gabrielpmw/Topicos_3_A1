@@ -1,15 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using restaurante.Models;
 
 namespace restaurante.Data
 {
-    public class RestauranteContext : DbContext
+    public class RestauranteContext : IdentityDbContext<Usuario, IdentityRole<int>, int>
     {
         public RestauranteContext(DbContextOptions<RestauranteContext> options) : base(options)
         {
         }
-
         public DbSet<Usuario> Usuarios { get; set; }
+
         public DbSet<Endereco> Enderecos { get; set; }
         public DbSet<ItemCardapio> ItensCardapio { get; set; }
         public DbSet<Ingrediente> Ingredientes { get; set; }
@@ -24,12 +26,10 @@ namespace restaurante.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Avisa o Entity Framework que a classe ItemPedido tem uma Chave Primária Composta
             modelBuilder.Entity<ItemPedido>()
                 .HasKey(ip => new { ip.PedidoId, ip.ItemCardapioId });
 
-            // APRESENTANDO AS CLASSES FILHAS PARA O BANCO DE DADOS:
-            // Isso fará o EF Core criar uma única tabela "Atendimentos" com uma coluna "Discriminator"
+            // Configuração de Herança (TPH) para Atendimentos
             modelBuilder.Entity<AtendimentoRetirada>();
             modelBuilder.Entity<AtendimentoDeliveryProprio>();
             modelBuilder.Entity<AtendimentoDeliveryApp>();

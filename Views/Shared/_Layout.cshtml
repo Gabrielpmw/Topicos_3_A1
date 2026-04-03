@@ -1,50 +1,113 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - restaurante</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - Sabor & Arte</title>
+    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/restaurante.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">restaurante</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - restaurante - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <header style="background-color: var(--bg-card); padding: 15px 0; border-bottom: 1px solid #2a3454; position: sticky; top: 0; z-index: 100;">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            
+            <div style="color: var(--gold); font-size: 1.6rem; font-weight: bold;">
+                <span style="margin-right: 8px;">🍴</span> Sabor & Arte
+            </div>
+
+            <nav style="display: flex; gap: 30px;">
+                <a href="#cardapio" style="color: white; text-decoration: none; font-weight: 500;">Cardápio</a>
+                <a href="#pedidos" style="color: white; text-decoration: none; font-weight: 500;">Fazer Pedido</a>
+                <a href="#reservas" style="color: white; text-decoration: none; font-weight: 500;">Reservar Mesa</a>
+            </nav>
+
+            <div class="auth-buttons">
+                @if (!User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Conta" asp-action="Login" class="btn-outline-gold" style="margin-right: 10px; padding: 8px 20px;">Entrar</a>
+                    <button onclick="abrirModal()" class="btn-gold" style="padding: 8px 20px;">Cadastrar</button>
+                }
+                else
+                {
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="color: var(--gold);">Olá, <strong>@User.Identity.Name</strong></span>
+                        <form asp-controller="Conta" asp-action="Logout" method="post" style="display: inline;">
+                            <button type="submit" class="btn-outline-gold" style="padding: 5px 15px; font-size: 0.8rem;">Sair</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer style="background-color: var(--bg-card); padding: 40px 0; border-top: 1px solid #2a3454; margin-top: 50px;">
+        <div class="container" style="text-align: center; color: var(--text-gray);">
+            <p>&copy; 2026 - Sabor & Arte - Restaurante Gourmet</p>
         </div>
     </footer>
+
+    <div id="modalCadastro">
+        <div class="modal-content-panel">
+        
+            <button onclick="fecharModal()" class="modal-close-btn">&times;</button>
+        
+            <h2 class="modal-title">Criar Conta</h2>
+
+            <form asp-controller="Conta" asp-action="Cadastrar" method="post">
+    
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input name="Nome" type="text" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sobrenome</label>
+                        <input name="Sobrenome" type="text" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Nome de Usuário</label>
+                    <input name="NomeUsuario" type="text" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label>CPF</label>
+                    <input name="CPF" type="text" placeholder="000.000.000-00" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input name="Senha" type="password" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar Senha</label>
+                    <input name="ConfirmarSenha" type="password" class="form-input" required>
+                </div>
+
+                <button type="submit" class="btn-finalizar">Finalizar Cadastro</button>
+            </form>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+            function abrirModal() { document.getElementById('modalCadastro').style.display = 'flex'; }
+            function fecharModal() { document.getElementById('modalCadastro').style.display = 'none'; }
+        
+            // Fecha o modal se clicar fora da caixa azul
+            window.onclick = function(event) {
+                let modal = document.getElementById('modalCadastro');
+                if (event.target == modal) { fecharModal(); }
+            }
+    </script>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

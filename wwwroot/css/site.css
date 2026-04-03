@@ -1,31 +1,196 @@
-html {
-  font-size: 14px;
+/* ==========================================================================
+   1. VARIÁVEIS E CONFIGURAÇÕES GERAIS
+   ========================================================================== */
+:root {
+    --bg-dark: #0f172a; /* Fundo principal */
+    --bg-card: #1e293b; /* Fundo dos painéis e modais */
+    --bg-input: #334155; /* Fundo das caixas de texto */
+    --gold: #d4af37; /* Dourado principal */
+    --gold-hover: #b8962e; /* Dourado mais escuro para hover */
+    --text-main: #ffffff; /* Texto branco */
+    --text-gray: #94a3b8; /* Texto cinza auxiliar */
+    --border-color: #475569; /* Cor das bordas dos inputs */
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+html, body {
+    height: 100%;
+    margin: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    scroll-behavior: smooth; /* Deslize suave para as âncoras */
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+/* ==========================================================================
+   2. BOTÕES PERSONALIZADOS
+   ========================================================================== */
+.btn-gold {
+    background-color: var(--gold);
+    color: #0f172a;
+    font-weight: 700;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
 }
 
-body {
-  margin-bottom: 60px;
+    .btn-gold:hover {
+        background-color: var(--gold-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+    }
+
+.btn-outline-gold {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 12px 30px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+    .btn-outline-gold:hover {
+        background: rgba(212, 175, 55, 0.1);
+        color: white;
+        border-color: white;
+    }
+
+/* Botão específico para finalizar o cadastro no Modal */
+.btn-finalizar {
+    width: 100%;
+    background-color: var(--gold);
+    color: #0f172a;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    .btn-finalizar:hover {
+        background-color: var(--gold-hover);
+    }
+
+/* ==========================================================================
+   3. SEÇÃO HERO (BOAS-VINDAS)
+   ========================================================================== */
+.hero-section {
+    height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* Overlay escuro para destacar o texto */
+    background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070');
+    background-size: cover;
+    background-position: center;
 }
+
+/* ==========================================================================
+   4. MODAL DE CADASTRO (ESTILO VIDRO/GLASS)
+   ========================================================================== */
+#modalCadastro {
+    display: none; /* Escondido por padrão */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.9);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(8px); /* Efeito de desfoque no fundo */
+}
+
+.modal-content-panel {
+    background-color: var(--bg-card);
+    padding: 40px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    color: var(--text-gray);
+    cursor: pointer;
+    font-size: 1.8rem;
+    background: none;
+    border: none;
+}
+
+    .modal-close-btn:hover {
+        color: var(--gold);
+    }
+
+.modal-title {
+    color: var(--gold);
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* ==========================================================================
+   5. FORMULÁRIOS E INPUTS
+   ========================================================================== */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+    .form-group label {
+        display: block;
+        color: #e2e8f0;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    box-sizing: border-box; /* Garante que o preenchimento não aumente o tamanho do campo */
+    transition: all 0.2s;
+}
+
+    .form-input:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+    }
+
+/* Layout lado a lado */
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+    .form-row .form-group {
+        flex: 1;
+    }

@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using restaurante.Data;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using restaurante.Models;
 using restaurante.ViewModels;
 
@@ -7,52 +7,47 @@ namespace restaurante.Controllers
 {
     public class ContaController : Controller
     {
-        private readonly RestauranteContext _context;
+        private readonly UserManager<Usuario> _userManager;
 
-        public ContaController(RestauranteContext context)
+        public ContaController(UserManager<Usuario> userManager)
         {
-            _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet]
         public IActionResult Cadastrar()
         {
-            var model = new UsuarioCadastroViewModel();
-            return View(model);
+            return View(new UsuarioCadastroViewModel());
         }
 
         [HttpPost]
-        public IActionResult Cadastrar(UsuarioCadastroViewModel model)
+        public async Task<IActionResult> Cadastrar(UsuarioCadastroViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var usuarioExistente = _context.Usuarios
-                    .Any(u => u.CPF == model.CPF || u.NomeUsuario == model.NomeUsuario);
-
-                if (usuarioExistente)
-                {
-                    ModelState.AddModelError("", "CPF ou Usuário já cadastrados.");
-                    return View(model);
-                }
-
                 var novoUsuario = new Usuario
                 {
+                    UserName = model.NomeUsuario,
+                    Email = model.NomeUsuario + "@restaurante.com", 
                     Nome = model.Nome,
                     Sobrenome = model.Sobrenome,
-                    NomeUsuario = model.NomeUsuario,
                     CPF = model.CPF,
-                    Perfil = Usuario.TipoPerfil.Comum,
-                    IsAtivo = true,
-                    SenhaHash = model.Senha
+                    IsAtivo = true
                 };
 
-                _context.Usuarios.Add(novoUsuario);
-                _context.SaveChanges();
+                var resultado = await _userManager.CreateAsync(novoUsuario, model.Senha);
 
-                return RedirectToAction("Index", "Home");
+                if (resultado.Succeeded)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                foreach (var error in resultado.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
             }
 
-            // Se houver erro de validação, devolvemos o modelo com os erros
             return View(model);
         }
     }

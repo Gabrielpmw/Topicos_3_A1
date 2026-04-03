@@ -1,26 +1,41 @@
 ﻿@{
-    ViewData["Title"] = "Página Inicial";
+    ViewData["Title"] = "Sabor & Arte - Início";
 }
 
-<div class="text-center" style="margin-top: 10vh;">
+<section class="hero-section" style="height: 85vh; display: flex; align-items: center; justify-content: center; position: relative; background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070') no-repeat center center; background-size: cover;">
     
-    <h1 style="color: #d4af37; font-size: 4rem; font-weight: bold;">Bem-vindo ao Sabor & Arte</h1>
-    
-    <p class="mt-4" style="font-size: 1.2rem; color: #b0b8c4;">
-        Experimente o melhor da gastronomia com atendimento presencial, <br />
-        delivery próprio ou por aplicativos
-    </p>
+    <div class="container" style="text-align: center;">
+        <h1 style="color: var(--gold); font-size: 4.5rem; font-weight: bold; margin-bottom: 20px; letter-spacing: -1px;">
+            Bem-vindo ao Sabor & Arte
+        </h1>
+        
+        <p style="color: var(--text-gray); font-size: 1.3rem; max-width: 750px; margin: 0 auto 45px; line-height: 1.6;">
+            Experimente o melhor da gastronomia com atendimento presencial, <br />
+            delivery próprio ou por aplicativos especializados.
+        </p>
 
-    <div class="mt-5">
-        <a href="#" class="btn btn-lg me-3" style="background-color: #d4af37; color: #1a2238; font-weight: bold;">
-            Ver Cardápio
-        </a>
-        <a href="#" class="btn btn-lg me-3" style="background-color: transparent; border: 1px solid #d4af37; color: #d4af37;">
-            Fazer Pedido
-        </a>
+        <div style="display: flex; gap: 20px; justify-content: center;">
+            <a href="#cardapio" class="btn-gold" style="font-size: 1.1rem; padding: 15px 45px;">
+                Ver Cardápio
+            </a>
+            
+            <a href="#pedidos" class="btn-outline-gold" style="font-size: 1.1rem; padding: 15px 45px;">
+                Fazer Pedido
+            </a>
 
-        <a asp-controller="Conta" asp-action="Cadastrar" class="btn btn-lg" style="background-color: #d4af37; color: #1a2238; font-weight: bold;">
-            Cadastrar
-        </a>
+            @if (!User.Identity.IsAuthenticated)
+            {
+                <button onclick="abrirModal()" class="btn-gold" style="font-size: 1.1rem; padding: 15px 45px;">
+                    Criar Conta Agora
+                </button>
+            }
+        </div>
     </div>
+</section>
 
+<section id="cardapio" style="padding: 100px 0;">
+    <div class="container">
+        <h2 style="color: var(--gold); text-align: center;">Nosso Cardápio</h2>
+        <p style="text-align: center; color: var(--text-gray);">Em breve, os pratos deliciosos aparecerão aqui!</p>
+    </div>
+</section>
