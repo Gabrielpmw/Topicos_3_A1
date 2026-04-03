@@ -66,7 +66,6 @@ html, body {
         border-color: white;
     }
 
-/* Botão específico para finalizar o cadastro no Modal */
 .btn-finalizar {
     width: 100%;
     background-color: var(--gold);
@@ -94,17 +93,17 @@ html, body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    /* Overlay escuro para destacar o texto */
     background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070');
     background-size: cover;
     background-position: center;
 }
 
 /* ==========================================================================
-   4. MODAL DE CADASTRO (ESTILO VIDRO/GLASS)
+   4. MODAIS (ESTILO GERAL E VIDRO)
    ========================================================================== */
-#modalCadastro {
-    display: none; /* Escondido por padrão */
+/* Aplicado aos fundos de todos os modais */
+#modalCadastro, #modalLogin, #perfilModal {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -114,7 +113,7 @@ html, body {
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(8px); /* Efeito de desfoque no fundo */
+    backdrop-filter: blur(8px);
 }
 
 .modal-content-panel {
@@ -137,6 +136,7 @@ html, body {
     font-size: 1.8rem;
     background: none;
     border: none;
+    transition: color 0.2s;
 }
 
     .modal-close-btn:hover {
@@ -176,7 +176,7 @@ html, body {
     border-radius: 8px;
     font-size: 1rem;
     outline: none;
-    box-sizing: border-box; /* Garante que o preenchimento não aumente o tamanho do campo */
+    box-sizing: border-box;
     transition: all 0.2s;
 }
 
@@ -185,7 +185,6 @@ html, body {
         box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
     }
 
-/* Layout lado a lado */
 .form-row {
     display: flex;
     gap: 16px;
@@ -193,4 +192,32 @@ html, body {
 
     .form-row .form-group {
         flex: 1;
+    }
+
+/* ==========================================================================
+   6. ESTILOS ESPECÍFICOS DO PERFIL (DASHBOARD)
+   ========================================================================== */
+.perfil-nav-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: left;
+    padding: 12px 15px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+    border-radius: 8px;
+    width: 100%;
+    display: block;
+}
+
+    .perfil-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        padding-left: 20px; /* Pequeno efeito de deslize no hover */
+    }
+
+    .perfil-nav-btn.active {
+        background: rgba(212, 175, 55, 0.1);
+        color: var(--gold);
+        font-weight: bold;
     }

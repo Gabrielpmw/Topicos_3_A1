@@ -225,4 +225,4 @@ C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\staticwe
 C:\Users\gabriel\source\repos\restaurante\restaurante\bin\Debug\net10.0\BCrypt.Net-Next.dll
 C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\restaurante.sourcelink.json
 C:\Users\gabriel\source\repos\restaurante\restaurante\bin\Debug\net10.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
-C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\ywre3bs6cj-{0}-lme11cwg1f-lme11cwg1f.gz
+C:\Users\gabriel\source\repos\restaurante\restaurante\obj\Debug\net10.0\compressed\ywre3bs6cj-{0}-klhewq5g6p-klhewq5g6p.gz

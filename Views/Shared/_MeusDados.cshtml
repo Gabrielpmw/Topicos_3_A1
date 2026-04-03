@@ -1,0 +1,40 @@
+﻿@model restaurante.ViewModels.PerfilViewModel
+
+<h3 style="color: var(--gold); margin-bottom: 25px;">Meus Dados</h3>
+
+<form asp-controller="Conta" asp-action="AtualizarPerfil" method="post">
+    <div class="form-row">
+        <div class="form-group">
+            <label>Nome</label>
+            <input asp-for="Nome" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Sobrenome</label>
+                <input asp-for="Sobrenome" class="form-input" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Nome de Usuário</label>
+                <input asp-for="NomeUsuario" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label>CPF</label>
+                    <input asp-for="CPF" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nova Senha (deixe em branco para manter)</label>
+                        <input asp-for="NovaSenha" type="password" class="form-input" placeholder="******">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirmar Nova Senha</label>
+                            <input asp-for="ConfirmarNovaSenha" type="password" class="form-input" placeholder="******">
+                            </div>
+
+                            <button type="submit" class="btn-gold" style="width: 200px; margin-top: 10px;">
+                                Salvar Alterações
+                            </button>
+                        </form>

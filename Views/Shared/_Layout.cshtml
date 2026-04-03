@@ -31,7 +31,9 @@
                 else
                 {
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <span style="color: var(--gold);">Olá, <strong>@User.Identity.Name</strong></span>
+                        <span style="color: var(--gold); cursor: pointer;" onclick="abrirPerfil()">
+                            Olá, <strong style="text-decoration: underline;">@User.Identity.Name</strong>
+                        </span>
                         <form asp-controller="Conta" asp-action="Logout" method="post" style="display: inline;">
                             <button type="submit" class="btn-outline-gold" style="padding: 5px 15px; font-size: 0.8rem;">Sair</button>
                         </form>
@@ -56,18 +58,15 @@
         <div class="modal-content-panel">
             <button onclick="fecharModalLogin()" class="modal-close-btn">&times;</button>
             <h2 class="modal-title">Entrar</h2>
-
             <form asp-controller="Conta" asp-action="Login" method="post">
                 <div class="form-group">
                     <label>Nome de Usuário</label>
                     <input name="NomeUsuario" type="text" class="form-input" required placeholder="Digite seu usuário">
                 </div>
-
                 <div class="form-group">
                     <label>Senha</label>
                     <input name="Senha" type="password" class="form-input" required placeholder="Digite sua senha">
                 </div>
-
                 <button type="submit" class="btn-finalizar">Entrar</button>
             </form>
         </div>
@@ -77,60 +76,96 @@
         <div class="modal-content-panel">
             <button onclick="fecharModal()" class="modal-close-btn">&times;</button>
             <h2 class="modal-title">Criar Conta</h2>
-
             <form asp-controller="Conta" asp-action="Cadastrar" method="post">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nome</label>
-                        <input name="Nome" type="text" class="form-input" required placeholder="Ex: João">
+                        <input name="Nome" type="text" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label>Sobrenome</label>
-                        <input name="Sobrenome" type="text" class="form-input" required placeholder="Ex: Silva">
+                        <input name="Sobrenome" type="text" class="form-input" required>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Nome de Usuário</label>
-                    <input name="NomeUsuario" type="text" class="form-input" required placeholder="Como quer ser chamado">
+                    <input name="NomeUsuario" type="text" class="form-input" required>
                 </div>
-
                 <div class="form-group">
                     <label>CPF</label>
-                    <input name="CPF" type="text" placeholder="000.000.000-00" class="form-input" required>
+                    <input name="CPF" type="text" class="form-input" required>
                 </div>
-
                 <div class="form-group">
                     <label>Senha</label>
-                    <input name="Senha" type="password" class="form-input" required placeholder="Mínimo 6 caracteres">
+                    <input name="Senha" type="password" class="form-input" required>
                 </div>
-
                 <div class="form-group">
                     <label>Confirmar Senha</label>
-                    <input name="ConfirmarSenha" type="password" class="form-input" required placeholder="Repita a senha">
+                    <input name="ConfirmarSenha" type="password" class="form-input" required>
                 </div>
-
                 <button type="submit" class="btn-finalizar">Finalizar Cadastro</button>
             </form>
         </div>
     </div>
 
+    <div id="perfilModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1050; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: var(--bg-card); border-radius: 15px; width: 90%; max-width: 1000px; height: 80vh; display: flex; overflow: hidden; border: 1px solid rgba(212,175,55,0.2); position: relative;">
+            
+            <button onclick="fecharPerfil()" class="modal-close-btn" style="top: 15px; right: 20px;">&times;</button>
+
+            <div style="width: 250px; background: rgba(15, 23, 42, 0.5); padding: 40px 20px; border-right: 1px solid rgba(255,255,255,0.05);">
+                <h2 style="color: var(--gold); margin-bottom: 40px; font-size: 1.5rem;">Meu Perfil</h2>
+                <nav style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="btnAbaDados" onclick="carregarAba('Dados')" class="perfil-nav-btn active">Meus Dados</button>
+                    <button id="btnAbaEnderecos" onclick="carregarAba('Enderecos')" class="perfil-nav-btn">Endereços</button>
+                    <button id="btnAbaPedidos" onclick="carregarAba('Pedidos')" class="perfil-nav-btn">Meus Pedidos</button>
+                    <button id="btnAbaConfig" onclick="carregarAba('Config')" class="perfil-nav-btn">Configurações</button>
+                </nav>
+            </div>
+
+            <div id="perfilContent" style="flex: 1; padding: 40px; overflow-y: auto; background: #1e293b;">
+                <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                    <p style="color: var(--text-gray);">Carregando informações...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
-            // Funções do Cadastro
             function abrirModal() { document.getElementById('modalCadastro').style.display = 'flex'; }
             function fecharModal() { document.getElementById('modalCadastro').style.display = 'none'; }
 
-            // Funções do Login
             function abrirModalLogin() { document.getElementById('modalLogin').style.display = 'flex'; }
             function fecharModalLogin() { document.getElementById('modalLogin').style.display = 'none'; }
 
-            // Fechar modais ao clicar na área escura (fora do painel azul)
+            function abrirPerfil() {
+                document.getElementById('perfilModal').style.display = 'flex';
+                carregarAba('Dados'); // Carrega a aba inicial automaticamente
+            }
+            function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
+
+            function carregarAba(aba) {
+                // Estética dos botões
+                $(".perfil-nav-btn").removeClass("active");
+                if(aba === 'Dados') $("#btnAbaDados").addClass("active");
+
+                // Chamada AJAX para buscar a Partial View do Controller
+                if (aba === 'Dados') {
+                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
+                    $("#perfilContent").load("/Conta/ObterDadosPerfil");
+                } else {
+                    $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
+                }
+            }
+
             window.onclick = function (event) {
-                let modalCad = document.getElementById('modalCadastro');
-                let modalLog = document.getElementById('modalLogin');
-                if (event.target == modalCad) { fecharModal(); }
-                if (event.target == modalLog) { fecharModalLogin(); }
+                let modais = [
+                    document.getElementById('modalCadastro'),
+                    document.getElementById('modalLogin'),
+                    document.getElementById('perfilModal')
+                ];
+                modais.forEach(m => { if (event.target == m) m.style.display = 'none'; });
             }
     </script>
     
