@@ -138,6 +138,50 @@
         </div>
     </div>
 
+    <div id="itemCardapioModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 1060; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+        <div class="modal-content-panel" style="max-width: 500px;">
+            <button onclick="fecharModalItemCardapio()" class="modal-close-btn">&times;</button>
+            <h2 class="modal-title" id="tituloModalItem">Novo Item do Cardápio</h2>
+            
+            <form id="formItemCardapio" onsubmit="salvarItemCardapio(event)">
+                <input type="hidden" id="itemId">
+                <div class="form-group">
+                    <label>Nome do Prato</label>
+                    <input type="text" id="itemNome" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="itemDescricao" class="form-input" rows="3" required style="resize: vertical;"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Preço Base (R$)</label>
+                        <input type="number" step="0.01" id="itemPreco" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Período</label>
+                        <select id="itemPeriodo" class="form-input" required>
+                            <option value="0">Almoço</option>
+                            <option value="1">Jantar</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Ingredientes (Segure CTRL para selecionar vários)</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                        <input type="text" id="novoIngredienteNome" class="form-input" placeholder="Novo ingrediente..." style="flex: 1;">
+                        <button type="button" onclick="salvarNovoIngrediente()" class="btn-outline-gold" style="padding: 0 15px; white-space: nowrap;">+ Criar</button>
+                    </div>
+                    <select id="itemIngredientes" class="form-input" multiple style="height: 100px; padding: 5px;">
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-finalizar">Salvar Prato</button>
+            </form>
+        </div>
+    </div>
+
     <div id="perfilModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1050; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
         <div style="background: var(--bg-card); border-radius: 15px; width: 90%; max-width: 1000px; height: 80vh; display: flex; overflow: hidden; border: 1px solid rgba(212,175,55,0.2); position: relative;">
             
@@ -145,11 +189,28 @@
 
             <div style="width: 250px; background: rgba(15, 23, 42, 0.5); padding: 40px 20px; border-right: 1px solid rgba(255,255,255,0.05);">
                 <h2 style="color: var(--gold); margin-bottom: 40px; font-size: 1.5rem;">Meu Perfil</h2>
+                
                 <nav style="display: flex; flex-direction: column; gap: 10px;">
+                    
                     <button id="btnAbaDados" onclick="carregarAba('Dados')" class="perfil-nav-btn active">Meus Dados</button>
-                    <button id="btnAbaEnderecos" onclick="carregarAba('Enderecos')" class="perfil-nav-btn">Endereços</button>
-                    <button id="btnAbaPedidos" onclick="carregarAba('Pedidos')" class="perfil-nav-btn">Meus Pedidos</button>
+
+                    @if (!User.IsInRole("Admin"))
+                    {
+                        <button id="btnAbaEnderecos" onclick="carregarAba('Enderecos')" class="perfil-nav-btn">Endereços</button>
+                        <button id="btnAbaPedidos" onclick="carregarAba('Pedidos')" class="perfil-nav-btn">Meus Pedidos</button>
+                    }
+
                     <button id="btnAbaConfig" onclick="carregarAba('Config')" class="perfil-nav-btn">Configurações</button>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;" />
+                        <span style="color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Administração</span>
+                        
+                        <button id="btnAbaPratos" onclick="carregarAba('Pratos')" class="perfil-nav-btn" style="color: #ffb703;">Gerenciar Pratos</button>
+                        <button id="btnAbaUsuarios" onclick="carregarAba('Usuarios')" class="perfil-nav-btn" style="color: #ffb703;">Gerenciar Usuários</button>
+                        <button id="btnAbaRelatorios" onclick="carregarAba('Relatorios')" class="perfil-nav-btn" style="color: #ffb703;">Relatórios</button>
+                    }
                 </nav>
             </div>
 
@@ -173,22 +234,27 @@
             // --- MODAL DE PERFIL E ABAS ---
             function abrirPerfil() {
                 document.getElementById('perfilModal').style.display = 'flex';
-                carregarAba('Dados'); // Carrega a aba inicial automaticamente
+                carregarAba('Dados');
             }
             function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
 
             function carregarAba(aba) {
                 $(".perfil-nav-btn").removeClass("active");
             
-                if (aba === 'Dados') {
+                if (aba === 'Dados' && document.getElementById('btnAbaDados')) {
                     $("#btnAbaDados").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Conta/ObterDadosPerfil");
                 }
-                else if (aba === 'Enderecos') {
+                else if (aba === 'Enderecos' && document.getElementById('btnAbaEnderecos')) {
                     $("#btnAbaEnderecos").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                    $("#perfilContent").load("/Conta/ObterEnderecos"); // Carrega os endereços via Partial View
+                    $("#perfilContent").load("/Conta/ObterEnderecos");
+                }
+                else if (aba === 'Pratos' && document.getElementById('btnAbaPratos')) {
+                    $("#btnAbaPratos").addClass("active");
+                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
+                    $("#perfilContent").load("/Admin/ObterItensCardapio");
                 }
                 else {
                     $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
@@ -226,7 +292,7 @@
                     body: JSON.stringify(model)
                 }).then(() => {
                     fecharModalEndereco();
-                    carregarAba('Enderecos'); // Atualiza a aba de endereços sem fechar o perfil
+                    carregarAba('Enderecos');
                 });
             }
 
@@ -237,13 +303,110 @@
                 }
             }
 
+            // --- FUNÇÕES DE CARDÁPIO E INGREDIENTES (ADMIN - AJAX) ---
+            function carregarIngredientesNoSelect(idsSelecionados = []) {
+                fetch('/Admin/ObterIngredientes')
+                    .then(response => response.json())
+                    .then(data => {
+                        const select = document.getElementById('itemIngredientes');
+                        select.innerHTML = '';
+                        data.forEach(ing => {
+                            const option = document.createElement('option');
+                            option.value = ing.id;
+                            option.text = ing.nome;
+                            if(idsSelecionados.includes(ing.id)) option.selected = true;
+                            select.appendChild(option);
+                        });
+                    });
+            }
+
+            function salvarNovoIngrediente() {
+                const nome = document.getElementById('novoIngredienteNome').value;
+                if(!nome) return alert('Digite o nome do ingrediente.');
+
+                fetch('/Admin/AdicionarIngredienteRapido', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nome)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('itemIngredientes');
+                    const option = document.createElement('option');
+                    option.value = data.id;
+                    option.text = data.nome;
+                    option.selected = true;
+                    select.appendChild(option);
+                    document.getElementById('novoIngredienteNome').value = '';
+                });
+            }
+
+            function abrirModalItemCardapio(id = null, nome = '', desc = '', preco = '', periodo = '0', ingredientesSelecionados = '[]') {
+                document.getElementById('itemId').value = id || '';
+                document.getElementById('itemNome').value = nome;
+                document.getElementById('itemDescricao').value = desc;
+                document.getElementById('itemPreco').value = preco;
+                document.getElementById('itemPeriodo').value = periodo;
+            
+                const idsParseados = JSON.parse(ingredientesSelecionados);
+                carregarIngredientesNoSelect(idsParseados);
+            
+                document.getElementById('tituloModalItem').innerText = id ? 'Editar Prato' : 'Novo Prato';
+                document.getElementById('itemCardapioModal').style.display = 'flex';
+            }
+
+            function fecharModalItemCardapio() {
+                document.getElementById('itemCardapioModal').style.display = 'none';
+            }
+
+            function salvarItemCardapio(e) {
+                e.preventDefault();
+            
+                const selectIng = document.getElementById('itemIngredientes');
+                const idsSelecionados = Array.from(selectIng.selectedOptions).map(opt => parseInt(opt.value));
+
+                const model = {
+                    Id: document.getElementById('itemId').value ? parseInt(document.getElementById('itemId').value) : null,
+                    Nome: document.getElementById('itemNome').value,
+                    Descricao: document.getElementById('itemDescricao').value,
+                    PrecoBase: parseFloat(document.getElementById('itemPreco').value),
+                    Periodo: parseInt(document.getElementById('itemPeriodo').value),
+                    IngredientesIds: idsSelecionados
+                };
+
+                fetch('/Admin/SalvarItemCardapio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(model)
+                }).then(async (response) => {
+                    if (response.ok) {
+                        fecharModalItemCardapio();
+                        carregarAba('Pratos');
+                    } else {
+                        // Lê a mensagem de erro do C# e mostra na tela
+                        const erroMsg = await response.text();
+                        alert(erroMsg);
+                    }
+                }).catch(error => {
+                    alert("Erro crítico de conexão com o servidor.");
+                });
+            }
+
+            function removerItemCardapio(id) {
+                if(confirm("Deseja remover este prato do cardápio permanentemente?")) {
+                    fetch('/Admin/RemoverItemCardapio/' + id, { method: 'POST' })
+                        .then(() => carregarAba('Pratos'));
+                }
+            }
+
             // --- FECHAR MODAIS CLICANDO FORA ---
             window.onclick = function (event) {
                 let modais = [
                     document.getElementById('modalCadastro'),
                     document.getElementById('modalLogin'),
                     document.getElementById('perfilModal'),
-                    document.getElementById('enderecoModal') // Garante que o modal de endereço feche ao clicar fora
+                    document.getElementById('enderecoModal'),
+                    document.getElementById('itemCardapioModal')
                 ];
                 modais.forEach(m => { if (event.target == m && m != null) m.style.display = 'none'; });
             }

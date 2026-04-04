@@ -1,0 +1,41 @@
+﻿@model List<restaurante.ViewModels.ItemCardapioViewModel>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h3 style="color: var(--gold); margin: 0;">Gerenciar Cardápio</h3>
+    <button onclick="abrirModalItemCardapio()" class="btn-gold" style="padding: 8px 15px; font-size: 0.85rem;">+ Novo Item</button>
+</div>
+
+@if (!Model.Any())
+{
+    <p style="color: var(--text-gray);">Nenhum item cadastrado no cardápio.</p>
+}
+else
+{
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        @foreach (var item in Model)
+        {
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                        <strong style="color: white; font-size: 1.1rem;">@item.Nome</strong>
+                        
+                        <span style="background: @(item.Periodo == 0 ? "#f59e0b" : "#3b82f6"); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">
+                            @(item.Periodo == 0 ? "Almoço" : "Jantar")
+                        </span>
+                    </div>
+                    <p style="color: var(--text-gray); font-size: 0.85rem; margin: 0 0 5px 0;">@item.Descricao</p>
+                    <span style="color: var(--gold); font-weight: bold;">R$ @item.PrecoBase.ToString("F2")</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    @{
+                        var jsonIngredientes = "[" + string.Join(",", item.IngredientesIds) + "]";
+                    }
+                    
+                    <button onclick="abrirModalItemCardapio(@item.Id, '@item.Nome.Replace("'", "\\'")', '@item.Descricao.Replace("'", "\\'")', @item.PrecoBase.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), @item.Periodo, '@jsonIngredientes')" class="btn-outline-gold" style="padding: 5px 10px; font-size: 0.75rem;">Editar</button>
+                    
+                    <button onclick="removerItemCardapio(@item.Id)" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">Remover</button>
+                </div>
+            </div>
+        }
+    </div>
+}
