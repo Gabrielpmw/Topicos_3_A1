@@ -14,5 +14,6 @@
         public decimal PrecoBase { get; set; }
         public PeriodoCardapio Periodo { get; set; }
         public ICollection<Ingrediente> Ingredientes { get; set; }
+        public bool IsAtivo { get; set; } = true;
     }
 }

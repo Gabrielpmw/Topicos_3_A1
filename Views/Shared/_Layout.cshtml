@@ -168,13 +168,15 @@
                 </div>
                 
                 <div class="form-group" style="margin-top: 15px;">
-                    <label>Ingredientes (Segure CTRL para selecionar vários)</label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                    <label>Ingredientes do Prato</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <input type="text" id="novoIngredienteNome" class="form-input" placeholder="Novo ingrediente..." style="flex: 1;">
                         <button type="button" onclick="salvarNovoIngrediente()" class="btn-outline-gold" style="padding: 0 15px; white-space: nowrap;">+ Criar</button>
                     </div>
-                    <select id="itemIngredientes" class="form-input" multiple style="height: 100px; padding: 5px;">
-                    </select>
+                    
+                    <div id="listaIngredientesVisual" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 5px; background: rgba(15, 23, 42, 0.5);">
+                        <p style="color: var(--text-gray); font-size: 0.85rem; margin: 5px 0;">Carregando ingredientes...</p>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-finalizar">Salvar Prato</button>
@@ -234,7 +236,7 @@
             // --- MODAL DE PERFIL E ABAS ---
             function abrirPerfil() {
                 document.getElementById('perfilModal').style.display = 'flex';
-                carregarAba('Dados');
+                carregarAba(document.getElementById('btnAbaDados') ? 'Dados' : 'Pratos');
             }
             function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
 
@@ -304,20 +306,86 @@
             }
 
             // --- FUNÇÕES DE CARDÁPIO E INGREDIENTES (ADMIN - AJAX) ---
+            let ingredientesChecadosGlobal = [];
+
             function carregarIngredientesNoSelect(idsSelecionados = []) {
+                ingredientesChecadosGlobal = idsSelecionados;
+                
                 fetch('/Admin/ObterIngredientes')
                     .then(response => response.json())
                     .then(data => {
-                        const select = document.getElementById('itemIngredientes');
-                        select.innerHTML = '';
+                        const container = document.getElementById('listaIngredientesVisual');
+                        container.innerHTML = '';
+                        
+                        if(data.length === 0) {
+                            container.innerHTML = '<p style="color: var(--text-gray); font-size: 0.85rem; margin: 5px 0;">Nenhum ingrediente cadastrado.</p>';
+                            return;
+                        }
+
                         data.forEach(ing => {
-                            const option = document.createElement('option');
-                            option.value = ing.id;
-                            option.text = ing.nome;
-                            if(idsSelecionados.includes(ing.id)) option.selected = true;
-                            select.appendChild(option);
+                            const isChecked = ingredientesChecadosGlobal.includes(ing.id) ? 'checked' : '';
+                            
+                            container.innerHTML += `
+                                <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <label style="display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; flex: 1;">
+                                        <input type="checkbox" class="ing-checkbox" value="${ing.id}" ${isChecked} onchange="atualizarChecados(this)">
+                                        <span id="ing-nome-${ing.id}" style="color: white; font-size: 0.9rem;">${ing.nome}</span>
+                                    </label>
+                                    <div id="ing-acoes-${ing.id}" style="display: flex; gap: 8px;">
+                                        <button type="button" onclick="habilitarEdicaoIngrediente(${ing.id}, '${ing.nome.replace("'", "\\'")}')" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Editar">✏️</button>
+                                        <button type="button" onclick="deletarIngredienteGlobal(${ing.id})" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Excluir">❌</button>
+                                    </div>
+                                </div>
+                            `;
                         });
                     });
+            }
+
+            function atualizarChecados(checkbox) {
+                const id = parseInt(checkbox.value);
+                if(checkbox.checked) {
+                    if(!ingredientesChecadosGlobal.includes(id)) ingredientesChecadosGlobal.push(id);
+                } else {
+                    ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
+                }
+            }
+
+            function habilitarEdicaoIngrediente(id, nomeAtual) {
+                const spanNome = document.getElementById(`ing-nome-${id}`);
+                const divAcoes = document.getElementById(`ing-acoes-${id}`);
+
+                spanNome.innerHTML = `<input type="text" id="input-edit-${id}" value="${nomeAtual}" class="form-input" style="padding: 2px 5px; height: 28px; width: 150px; font-size: 0.85rem;">`;
+
+                divAcoes.innerHTML = `
+                    <button type="button" onclick="salvarEdicaoIngrediente(${id})" style="background: none; border: none; cursor: pointer;" title="Salvar">💾</button>
+                    <button type="button" onclick="carregarIngredientesNoSelect(ingredientesChecadosGlobal)" style="background: none; border: none; cursor: pointer;" title="Cancelar">🚫</button>
+                `;
+            }
+
+            function salvarEdicaoIngrediente(id) {
+                const novoNome = document.getElementById(`input-edit-${id}`).value;
+                if(!novoNome) return alert("O nome não pode ser vazio.");
+
+                fetch(`/Admin/AtualizarIngrediente/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Nome: novoNome })
+                }).then(response => {
+                    if(response.ok) carregarIngredientesNoSelect(ingredientesChecadosGlobal);
+                    else alert("Erro ao atualizar ingrediente.");
+                });
+            }
+
+            function deletarIngredienteGlobal(id) {
+                if(confirm("Tem certeza que deseja apagar este ingrediente do sistema? Ele sumirá de todos os pratos.")) {
+                    fetch(`/Admin/RemoverIngrediente/${id}`, { method: 'POST' })
+                        .then(response => {
+                            if(response.ok) {
+                                ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
+                                carregarIngredientesNoSelect(ingredientesChecadosGlobal);
+                            }
+                        });
+                }
             }
 
             function salvarNovoIngrediente() {
@@ -331,12 +399,8 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    const select = document.getElementById('itemIngredientes');
-                    const option = document.createElement('option');
-                    option.value = data.id;
-                    option.text = data.nome;
-                    option.selected = true;
-                    select.appendChild(option);
+                    ingredientesChecadosGlobal.push(data.id);
+                    carregarIngredientesNoSelect(ingredientesChecadosGlobal);
                     document.getElementById('novoIngredienteNome').value = '';
                 });
             }
@@ -361,9 +425,6 @@
 
             function salvarItemCardapio(e) {
                 e.preventDefault();
-            
-                const selectIng = document.getElementById('itemIngredientes');
-                const idsSelecionados = Array.from(selectIng.selectedOptions).map(opt => parseInt(opt.value));
 
                 const model = {
                     Id: document.getElementById('itemId').value ? parseInt(document.getElementById('itemId').value) : null,
@@ -371,7 +432,7 @@
                     Descricao: document.getElementById('itemDescricao').value,
                     PrecoBase: parseFloat(document.getElementById('itemPreco').value),
                     Periodo: parseInt(document.getElementById('itemPeriodo').value),
-                    IngredientesIds: idsSelecionados
+                    IngredientesIds: ingredientesChecadosGlobal
                 };
 
                 fetch('/Admin/SalvarItemCardapio', {
@@ -383,7 +444,6 @@
                         fecharModalItemCardapio();
                         carregarAba('Pratos');
                     } else {
-                        // Lê a mensagem de erro do C# e mostra na tela
                         const erroMsg = await response.text();
                         alert(erroMsg);
                     }
