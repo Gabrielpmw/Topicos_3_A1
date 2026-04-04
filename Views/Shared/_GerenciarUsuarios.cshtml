@@ -1,0 +1,47 @@
+﻿@model List<restaurante.ViewModels.UsuarioListaViewModel>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h3 style="color: var(--gold); margin: 0;">Gerenciar Usuários</h3>
+    
+    <label style="color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+        <input type="checkbox" id="chkMostrarInativos" onchange="toggleUsuariosInativos()" @(ViewBag.MostrarInativos ? "checked" : "")>
+        Mostrar Desativados
+    </label>
+</div>
+
+@if (!Model.Any())
+{
+    <p style="color: var(--text-gray);">Nenhum usuário encontrado.</p>
+}
+else
+{
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        @foreach (var user in Model)
+        {
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; transition: 0.3s; opacity: @(user.IsAtivo ? "1" : "0.5");">
+                <div>
+                    <strong style="color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;">
+                        @user.NomeCompleto
+                        @if (!user.IsAtivo)
+                        {
+                            <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; text-transform: uppercase;">Bloqueado</span>
+                        }
+                    </strong>
+                    <span style="color: var(--text-gray); font-size: 0.85rem; display: block; margin-top: 4px;">
+                        @user.NomeUsuario | CPF: @user.CPF
+                    </span>
+                </div>
+                <div>
+                    @if (user.IsAtivo)
+                    {
+                        <button onclick="alternarStatusUsuario(@user.Id, true)" class="btn-outline-gold" style="border-color: #ef4444; color: #ef4444; padding: 6px 15px; font-size: 0.8rem;">Desativar Conta</button>
+                    }
+                    else
+                    {
+                        <button onclick="alternarStatusUsuario(@user.Id, false)" class="btn-gold" style="padding: 6px 15px; font-size: 0.8rem;">Reativar Conta</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

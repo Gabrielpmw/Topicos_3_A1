@@ -64,19 +64,31 @@ namespace restaurante.Controllers
         {
             if (ModelState.IsValid)
             {
-                var resultado = await _signInManager.PasswordSignInAsync(
-                    model.NomeUsuario,
-                    model.Senha,
-                    isPersistent: false,
-                    lockoutOnFailure: false);
+                // 1. Busca o usuário pelo nome de usuário digitado
+                var user = await _userManager.FindByNameAsync(model.NomeUsuario);
 
-                if (resultado.Succeeded)
+                if (user != null)
                 {
-                    return RedirectToAction("Index", "Home");
+                    // 2. A MÁGICA ACONTECE AQUI: Verifica se a conta está desativada
+                    if (!user.IsAtivo)
+                    {
+                        // Guarda a mensagem de erro temporariamente para exibir na tela
+                        TempData["MensagemErroSistema"] = "Sua conta foi desativada. Por favor, entre em contato com o suporte do site.";
+                        return RedirectToAction("Index", "Home"); // Redireciona de volta para a tela inicial
+                    }
+
+                    // 3. Se estiver ativo, tenta fazer o login padrão com a senha
+                    var resultado = await _signInManager.PasswordSignInAsync(user, model.Senha, isPersistent: false, lockoutOnFailure: false);
+
+                    if (resultado.Succeeded)
+                    {
+                        return RedirectToAction("Index", "Home");
+                    }
                 }
             }
 
-            TempData["ErroLogin"] = "Usuário ou senha incorretos.";
+            // Se o usuário não existir ou a senha estiver errada
+            TempData["MensagemErroSistema"] = "Usuário ou senha inválidos.";
             return RedirectToAction("Index", "Home");
         }
 

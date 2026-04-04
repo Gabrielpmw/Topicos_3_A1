@@ -46,6 +46,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9HZXJlbmNpYXJDYXJkYXBpby5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/gabriel/source/repos/restaurante/restaurante/Views/Shared/_GerenciarUsuarios.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9HZXJlbmNpYXJVc3Vhcmlvcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/gabriel/source/repos/restaurante/restaurante/Views/Shared/_MeusDados.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9NZXVzRGFkb3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 

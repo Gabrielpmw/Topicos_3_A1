@@ -224,6 +224,15 @@
         </div>
     </div>
 
+    @if (TempData["MensagemErroSistema"] != null)
+    {
+        <script>
+                window.onload = function () {
+                    alert('@Html.Raw(TempData["MensagemErroSistema"])');
+                };
+        </script>
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
             // --- MODAIS DE AUTENTICAÇÃO ---
@@ -257,6 +266,12 @@
                     $("#btnAbaPratos").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Admin/ObterItensCardapio");
+                }
+                // NOVA ABA: GERENCIAR USUÁRIOS
+                else if (aba === 'Usuarios' && document.getElementById('btnAbaUsuarios')) {
+                    $("#btnAbaUsuarios").addClass("active");
+                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
+                    $("#perfilContent").load("/Admin/ObterUsuarios?mostrarInativos=false");
                 }
                 else {
                     $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
@@ -456,6 +471,29 @@
                 if(confirm("Deseja remover este prato do cardápio permanentemente?")) {
                     fetch('/Admin/RemoverItemCardapio/' + id, { method: 'POST' })
                         .then(() => carregarAba('Pratos'));
+                }
+            }
+
+            // --- FUNÇÕES DE USUÁRIOS (ADMIN) ---
+            function toggleUsuariosInativos() {
+                const mostrar = document.getElementById('chkMostrarInativos').checked;
+                $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
+                $("#perfilContent").load(`/Admin/ObterUsuarios?mostrarInativos=${mostrar}`);
+            }
+
+            function alternarStatusUsuario(id, desativando) {
+                const acao = desativando ? "desativar" : "reativar";
+                
+                if (confirm(`Tem certeza que deseja ${acao} este usuário?`)) {
+                    fetch(`/Admin/AlternarStatusUsuario/${id}`, { method: 'POST' })
+                    .then(async response => {
+                        if (response.ok) {
+                            toggleUsuariosInativos();
+                        } else {
+                            const msg = await response.text();
+                            alert(msg || `Erro ao ${acao} o usuário.`);
+                        }
+                    }).catch(() => alert("Erro crítico de conexão com o servidor."));
                 }
             }
 
