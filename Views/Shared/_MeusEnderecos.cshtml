@@ -1,0 +1,29 @@
+﻿@model List<restaurante.ViewModels.EnderecoViewModel>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h3 style="color: var(--gold); margin: 0;">Meus Endereços</h3>
+    <button onclick="abrirModalEndereco()" class="btn-gold" style="padding: 8px 15px; font-size: 0.85rem;">+ Novo Endereço</button>
+</div>
+
+@if (!Model.Any())
+{
+    <p style="color: var(--text-gray);">Nenhum endereço cadastrado.</p>
+}
+else
+{
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        @foreach (var item in Model)
+        {
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: white; display: block;">@item.Logradouro, @item.Numero</strong>
+                    <span style="color: var(--text-gray); font-size: 0.85rem;">@item.Bairro - CEP: @item.CEP</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="abrirModalEndereco(@item.Id, '@item.Logradouro', '@item.Numero', '@item.Bairro', '@item.CEP')" class="btn-outline-gold" style="padding: 5px 10px; font-size: 0.75rem;">Editar</button>
+                    <button onclick="removerEndereco(@item.Id)" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">Remover</button>
+                </div>
+            </div>
+        }
+    </div>
+}

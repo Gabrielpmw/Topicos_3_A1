@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using restaurante.Data;
 using restaurante.Models;
 using restaurante.ViewModels;
 
@@ -9,14 +11,20 @@ namespace restaurante.Controllers
     {
         private readonly UserManager<Usuario> _userManager;
         private readonly SignInManager<Usuario> _signInManager;
+        private readonly RestauranteContext _context; // Adicionado para acessar os Endereços
 
-        public ContaController(UserManager<Usuario> userManager, SignInManager<Usuario> signInManager)
+        // Construtor atualizado com o contexto do banco de dados
+        public ContaController(UserManager<Usuario> userManager, SignInManager<Usuario> signInManager, RestauranteContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _context = context;
         }
 
-        // --- CADASTRO ---
+        // ==========================================
+        // 1. AUTENTICAÇÃO E CADASTRO
+        // ==========================================
+
         [HttpPost]
         public async Task<IActionResult> Cadastrar(UsuarioCadastroViewModel model)
         {
@@ -36,8 +44,9 @@ namespace restaurante.Controllers
 
                 if (resultado.Succeeded)
                 {
-                    // Login automático após o cadastro
+                    await _userManager.AddToRoleAsync(novoUsuario, "Comum");
                     await _signInManager.SignInAsync(novoUsuario, isPersistent: false);
+
                     return RedirectToAction("Index", "Home");
                 }
 
@@ -46,10 +55,10 @@ namespace restaurante.Controllers
                     ModelState.AddModelError("", error.Description);
                 }
             }
+
             return RedirectToAction("Index", "Home");
         }
 
-        // --- LOGIN ---
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
@@ -71,21 +80,22 @@ namespace restaurante.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // --- LOGOUT ---
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync(); // Limpa o cookie de autenticação
+            await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
 
-        // --- BUSCAR DADOS PARA O PERFIL ---
+        // ==========================================
+        // 2. GERENCIAMENTO DE PERFIL (MEUS DADOS)
+        // ==========================================
+
         [HttpGet]
         public async Task<IActionResult> ObterDadosPerfil()
         {
             var usuario = await _userManager.GetUserAsync(User);
 
-            // RESOLVE USUÁRIO FANTASMA: Se o cookie existe mas o banco foi resetado, desloga
             if (usuario == null)
             {
                 await _signInManager.SignOutAsync();
@@ -103,20 +113,17 @@ namespace restaurante.Controllers
             return PartialView("_MeusDados", model);
         }
 
-        // --- ATUALIZAR DADOS E SENHA ---
         [HttpPost]
         public async Task<IActionResult> AtualizarPerfil(PerfilViewModel model)
         {
             var usuario = await _userManager.GetUserAsync(User);
 
-            // Proteção contra usuário inexistente no banco
             if (usuario == null)
             {
                 await _signInManager.SignOutAsync();
                 return RedirectToAction("Index", "Home");
             }
 
-            // 1. ATUALIZAR NOME DE USUÁRIO (USER NAME)
             if (usuario.UserName != model.NomeUsuario)
             {
                 var resultadoNome = await _userManager.SetUserNameAsync(usuario, model.NomeUsuario);
@@ -127,7 +134,6 @@ namespace restaurante.Controllers
                 }
             }
 
-            // 2. ATUALIZAR DADOS BÁSICOS E CPF
             usuario.Nome = model.Nome;
             usuario.Sobrenome = model.Sobrenome;
             usuario.CPF = model.CPF;
@@ -136,7 +142,6 @@ namespace restaurante.Controllers
 
             if (resultadoUpdate.Succeeded)
             {
-                // 3. LÓGICA DE SENHA (DESLOGA SE FOR ALTERADA)
                 if (!string.IsNullOrEmpty(model.NovaSenha))
                 {
                     var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
@@ -144,20 +149,97 @@ namespace restaurante.Controllers
 
                     if (resultadoSenha.Succeeded)
                     {
-                        // Desloga automaticamente para validar a nova senha
                         await _signInManager.SignOutAsync();
                         TempData["Mensagem"] = "Dados e Senha alterados! Por favor, faça login novamente.";
                         return RedirectToAction("Index", "Home");
                     }
                 }
 
-                // 4. ATUALIZAR COOKIE
-                // Se mudou apenas dados (Username/CPF) sem mudar a senha, atualiza o cookie para manter logado
                 await _signInManager.RefreshSignInAsync(usuario);
                 TempData["Mensagem"] = "Perfil atualizado com sucesso!";
             }
 
             return RedirectToAction("Index", "Home");
         }
+
+        // ==========================================
+        // 3. GERENCIAMENTO DE ENDEREÇOS
+        // ==========================================
+
+        [HttpGet]
+        public async Task<IActionResult> ObterEnderecos()
+        {
+            var usuario = await _userManager.GetUserAsync(User);
+            if (usuario == null) return Unauthorized();
+
+            // Busca apenas os endereços ativos do usuário logado
+            var enderecos = _context.Enderecos
+                .Where(e => e.UsuarioId == usuario.Id && e.IsAtivo)
+                .Select(e => new EnderecoViewModel
+                {
+                    Id = e.Id,
+                    Logradouro = e.Logradouro,
+                    Numero = e.Numero,
+                    Bairro = e.Bairro,
+                    CEP = e.CEP
+                }).ToList();
+
+            return PartialView("_MeusEnderecos", enderecos);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SalvarEndereco([FromBody] EnderecoViewModel model)
+        {
+            var usuario = await _userManager.GetUserAsync(User);
+            if (usuario == null) return Unauthorized();
+
+            if (model.Id.HasValue && model.Id.Value > 0)
+            {
+                // ATUALIZAR
+                var enderecoDb = _context.Enderecos.FirstOrDefault(e => e.Id == model.Id && e.UsuarioId == usuario.Id);
+                if (enderecoDb != null)
+                {
+                    enderecoDb.Logradouro = model.Logradouro;
+                    enderecoDb.Numero = model.Numero;
+                    enderecoDb.Bairro = model.Bairro;
+                    enderecoDb.CEP = model.CEP;
+                    _context.Update(enderecoDb);
+                }
+            }
+            else
+            {
+                // CRIAR NOVO
+                var novo = new Endereco
+                {
+                    UsuarioId = usuario.Id,
+                    Logradouro = model.Logradouro,
+                    Numero = model.Numero,
+                    Bairro = model.Bairro,
+                    CEP = model.CEP,
+                    IsAtivo = true // Define como ativo por padrão
+                };
+                _context.Add(novo);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoverEndereco(int id)
+        {
+            var usuario = await _userManager.GetUserAsync(User);
+            if (usuario == null) return Unauthorized();
+
+            var endereco = _context.Enderecos.FirstOrDefault(e => e.Id == id && e.UsuarioId == usuario.Id);
+            if (endereco != null)
+            {
+                // Soft Delete: Apenas desativa o endereço em vez de apagar do banco
+                endereco.IsAtivo = false;
+                _context.Update(endereco);
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
+        }
     }
-} 
+}

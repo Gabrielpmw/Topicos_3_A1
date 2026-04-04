@@ -108,6 +108,36 @@
         </div>
     </div>
 
+    <div id="enderecoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 1060; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+        <div class="modal-content-panel" style="max-width: 450px;">
+            <button onclick="fecharModalEndereco()" class="modal-close-btn">&times;</button>
+            <h2 class="modal-title" id="tituloModalEnd">Novo Endereço</h2>
+            
+            <form id="formEnd" onsubmit="salvarEndereco(event)">
+                <input type="hidden" id="endId">
+                <div class="form-group">
+                    <label>Logradouro (Rua/Alameda)</label>
+                    <input type="text" id="endLogradouro" class="form-input" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="text" id="endNumero" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Bairro</label>
+                        <input type="text" id="endBairro" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>CEP</label>
+                    <input type="text" id="endCep" class="form-input" placeholder="00000-000" required>
+                </div>
+                <button type="submit" class="btn-finalizar">Salvar Endereço</button>
+            </form>
+        </div>
+    </div>
+
     <div id="perfilModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1050; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
         <div style="background: var(--bg-card); border-radius: 15px; width: 90%; max-width: 1000px; height: 80vh; display: flex; overflow: hidden; border: 1px solid rgba(212,175,55,0.2); position: relative;">
             
@@ -133,12 +163,14 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
+            // --- MODAIS DE AUTENTICAÇÃO ---
             function abrirModal() { document.getElementById('modalCadastro').style.display = 'flex'; }
             function fecharModal() { document.getElementById('modalCadastro').style.display = 'none'; }
 
             function abrirModalLogin() { document.getElementById('modalLogin').style.display = 'flex'; }
             function fecharModalLogin() { document.getElementById('modalLogin').style.display = 'none'; }
 
+            // --- MODAL DE PERFIL E ABAS ---
             function abrirPerfil() {
                 document.getElementById('perfilModal').style.display = 'flex';
                 carregarAba('Dados'); // Carrega a aba inicial automaticamente
@@ -146,26 +178,74 @@
             function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
 
             function carregarAba(aba) {
-                // Estética dos botões
                 $(".perfil-nav-btn").removeClass("active");
-                if(aba === 'Dados') $("#btnAbaDados").addClass("active");
-
-                // Chamada AJAX para buscar a Partial View do Controller
+            
                 if (aba === 'Dados') {
+                    $("#btnAbaDados").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Conta/ObterDadosPerfil");
-                } else {
+                }
+                else if (aba === 'Enderecos') {
+                    $("#btnAbaEnderecos").addClass("active");
+                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
+                    $("#perfilContent").load("/Conta/ObterEnderecos"); // Carrega os endereços via Partial View
+                }
+                else {
                     $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
                 }
             }
 
+            // --- FUNÇÕES DE ENDEREÇO (AJAX) ---
+            function abrirModalEndereco(id = null, log = '', num = '', bairro = '', cep = '') {
+                document.getElementById('endId').value = id || '';
+                document.getElementById('endLogradouro').value = log;
+                document.getElementById('endNumero').value = num;
+                document.getElementById('endBairro').value = bairro;
+                document.getElementById('endCep').value = cep;
+                document.getElementById('tituloModalEnd').innerText = id ? 'Editar Endereço' : 'Novo Endereço';
+                document.getElementById('enderecoModal').style.display = 'flex';
+            }
+
+            function fecharModalEndereco() {
+                document.getElementById('enderecoModal').style.display = 'none';
+            }
+
+            function salvarEndereco(e) {
+                e.preventDefault();
+                const model = {
+                    Id: document.getElementById('endId').value ? parseInt(document.getElementById('endId').value) : null,
+                    Logradouro: document.getElementById('endLogradouro').value,
+                    Numero: document.getElementById('endNumero').value,
+                    Bairro: document.getElementById('endBairro').value,
+                    CEP: document.getElementById('endCep').value
+                };
+
+                fetch('/Conta/SalvarEndereco', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(model)
+                }).then(() => {
+                    fecharModalEndereco();
+                    carregarAba('Enderecos'); // Atualiza a aba de endereços sem fechar o perfil
+                });
+            }
+
+            function removerEndereco(id) {
+                if(confirm("Deseja remover este endereço?")) {
+                    fetch('/Conta/RemoverEndereco/' + id, { method: 'POST' })
+                        .then(() => carregarAba('Enderecos'));
+                }
+            }
+
+            // --- FECHAR MODAIS CLICANDO FORA ---
             window.onclick = function (event) {
                 let modais = [
                     document.getElementById('modalCadastro'),
                     document.getElementById('modalLogin'),
-                    document.getElementById('perfilModal')
+                    document.getElementById('perfilModal'),
+                    document.getElementById('enderecoModal') // Garante que o modal de endereço feche ao clicar fora
                 ];
-                modais.forEach(m => { if (event.target == m) m.style.display = 'none'; });
+                modais.forEach(m => { if (event.target == m && m != null) m.style.display = 'none'; });
             }
     </script>
     
