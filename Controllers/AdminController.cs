@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity; // <-- Necessário para o UserManager
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using restaurante.Data;
@@ -12,9 +12,8 @@ namespace restaurante.Controllers
     public class AdminController : Controller
     {
         private readonly RestauranteContext _context;
-        private readonly UserManager<Usuario> _userManager; // <-- Adicionado para gerenciar os usuários
+        private readonly UserManager<Usuario> _userManager;
 
-        // Atualizado para receber o UserManager
         public AdminController(RestauranteContext context, UserManager<Usuario> userManager)
         {
             _context = context;
@@ -194,9 +193,12 @@ namespace restaurante.Controllers
         [HttpGet]
         public async Task<IActionResult> ObterUsuarios(bool mostrarInativos = false)
         {
-            var query = _context.Usuarios.AsQueryable();
+            // Oculta os Administradores da lista para evitar acidentes
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            var adminIds = admins.Select(a => a.Id).ToList();
 
-            // Se o checkbox de mostrar inativos não estiver marcado, filtra só os ativos
+            var query = _context.Usuarios.Where(u => !adminIds.Contains(u.Id));
+
             if (!mostrarInativos)
             {
                 query = query.Where(u => u.IsAtivo);
@@ -211,7 +213,6 @@ namespace restaurante.Controllers
                 IsAtivo = u.IsAtivo
             }).ToListAsync();
 
-            // Guardamos o estado do filtro para que o HTML saiba se o checkbox deve ficar marcado
             ViewBag.MostrarInativos = mostrarInativos;
 
             return PartialView("_GerenciarUsuarios", usuarios);
@@ -223,20 +224,90 @@ namespace restaurante.Controllers
             var usuario = await _context.Usuarios.FindAsync(id);
             if (usuario == null) return NotFound("Usuário não encontrado.");
 
-            // Proteção: Impede que o Administrador desative a si próprio e fique trancado fora do sistema!
             var adminAtual = await _userManager.GetUserAsync(User);
             if (adminAtual != null && adminAtual.Id == id)
             {
                 return BadRequest("Você não pode desativar a sua própria conta.");
             }
 
-            // Alterna o status (Se for true vira false, se for false vira true)
             usuario.IsAtivo = !usuario.IsAtivo;
 
             _context.Usuarios.Update(usuario);
             await _context.SaveChangesAsync();
 
             return Ok();
+        }
+
+        // ==========================================
+        // 4. GERENCIAMENTO DE SUGESTÕES DO CHEFE
+        // ==========================================
+
+        [HttpGet]
+        public async Task<IActionResult> ObterSugestoes()
+        {
+            var hoje = DateTime.Today;
+
+            // Busca o que já está definido para hoje
+            var sugestoesHoje = await _context.SugestoesChefe
+                .Include(s => s.ItemCardapio)
+                .Where(s => s.DataSugestao.Date == hoje)
+                .ToListAsync();
+
+            // Busca todos os pratos ativos para o Admin escolher
+            var pratos = await _context.ItensCardapio
+                .Where(i => i.IsAtivo)
+                .ToListAsync();
+
+            ViewBag.SugestaoAlmoco = sugestoesHoje.FirstOrDefault(s => s.ItemCardapio.Periodo == ItemCardapio.PeriodoCardapio.Almoco);
+            ViewBag.SugestaoJantar = sugestoesHoje.FirstOrDefault(s => s.ItemCardapio.Periodo == ItemCardapio.PeriodoCardapio.Jantar);
+
+            return PartialView("_GerenciarSugestoes", pratos);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DefinirSugestao(int pratoId)
+        {
+            var prato = await _context.ItensCardapio.FindAsync(pratoId);
+            if (prato == null) return NotFound();
+
+            var hoje = DateTime.Today;
+
+            // 1. Remove qualquer sugestão existente para o MESMO PERÍODO no dia de hoje
+            var antigas = await _context.SugestoesChefe
+                .Include(s => s.ItemCardapio)
+                .Where(s => s.DataSugestao.Date == hoje && s.ItemCardapio.Periodo == prato.Periodo)
+                .ToListAsync();
+
+            _context.SugestoesChefe.RemoveRange(antigas);
+
+            // 2. Adiciona a nova sugestão com os 20% de desconto
+            var novaSugestao = new SugestaoChefe
+            {
+                ItemCardapioId = pratoId,
+                DataSugestao = hoje,
+                DescontoAplicado = 20.00m
+            };
+
+            _context.SugestoesChefe.Add(novaSugestao);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SortearSugestao(int periodo) // 0 = Almoco, 1 = Jantar
+        {
+            var pEnum = (ItemCardapio.PeriodoCardapio)periodo;
+
+            // Busca um prato aleatório que seja ativo e do período correto
+            var pratoSorteado = await _context.ItensCardapio
+                .Where(i => i.IsAtivo && i.Periodo == pEnum)
+                .OrderBy(r => Guid.NewGuid()) // Truque do SQL para sortear
+                .FirstOrDefaultAsync();
+
+            if (pratoSorteado == null) return BadRequest("Nenhum prato cadastrado para este período.");
+
+            return await DefinirSugestao(pratoSorteado.Id);
         }
     }
 }

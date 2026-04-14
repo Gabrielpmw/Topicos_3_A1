@@ -210,6 +210,7 @@
                         <span style="color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Administração</span>
                         
                         <button id="btnAbaPratos" onclick="carregarAba('Pratos')" class="perfil-nav-btn" style="color: #ffb703;">Gerenciar Pratos</button>
+                        <button id="btnAbaSugestoes" onclick="carregarAba('Sugestoes')" class="perfil-nav-btn" style="color: #ffb703;">Sugestão do Chefe</button>
                         <button id="btnAbaUsuarios" onclick="carregarAba('Usuarios')" class="perfil-nav-btn" style="color: #ffb703;">Gerenciar Usuários</button>
                         <button id="btnAbaRelatorios" onclick="carregarAba('Relatorios')" class="perfil-nav-btn" style="color: #ffb703;">Relatórios</button>
                     }
@@ -267,7 +268,13 @@
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Admin/ObterItensCardapio");
                 }
-                // NOVA ABA: GERENCIAR USUÁRIOS
+                // NOVA ABA: SUGESTÕES DO CHEFE
+                else if (aba === 'Sugestoes' && document.getElementById('btnAbaSugestoes')) {
+                    $("#btnAbaSugestoes").addClass("active");
+                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
+                    $("#perfilContent").load("/Admin/ObterSugestoes");
+                }
+                // ABA: GERENCIAR USUÁRIOS
                 else if (aba === 'Usuarios' && document.getElementById('btnAbaUsuarios')) {
                     $("#btnAbaUsuarios").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
@@ -275,6 +282,23 @@
                 }
                 else {
                     $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
+                }
+            }
+
+            // --- FUNÇÕES DE CONTA E PERFIL ---
+            function desativarMinhaConta() {
+                if(confirm("ATENÇÃO: Tem certeza absoluta que deseja desativar sua conta? Você será desconectado imediatamente.")) {
+                    fetch('/Conta/DesativarConta', { method: 'POST' })
+                    .then(async response => {
+                        if(response.ok) {
+                            window.location.href = '/';
+                        } else {
+                            const msg = await response.text();
+                            alert(msg || "Erro ao tentar desativar a conta.");
+                        }
+                    }).catch(() => {
+                        alert("Erro de conexão com o servidor.");
+                    });
                 }
             }
 
@@ -472,6 +496,23 @@
                     fetch('/Admin/RemoverItemCardapio/' + id, { method: 'POST' })
                         .then(() => carregarAba('Pratos'));
                 }
+            }
+
+            // --- FUNÇÕES DE SUGESTÃO DO CHEFE (ADMIN) ---
+            function definirSugestaoManual(id) {
+                fetch(`/Admin/DefinirSugestao?pratoId=${id}`, { method: 'POST' })
+                    .then(response => {
+                        if(response.ok) carregarAba('Sugestoes');
+                        else alert("Erro ao definir sugestão.");
+                    });
+            }
+
+            function sortearSugestao(periodo) {
+                fetch(`/Admin/SortearSugestao?periodo=${periodo}`, { method: 'POST' })
+                    .then(response => {
+                        if(response.ok) carregarAba('Sugestoes');
+                        else alert("Erro ao sortear.");
+                    });
             }
 
             // --- FUNÇÕES DE USUÁRIOS (ADMIN) ---

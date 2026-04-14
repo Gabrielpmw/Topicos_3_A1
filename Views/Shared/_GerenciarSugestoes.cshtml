@@ -1,0 +1,74 @@
+﻿@model List<restaurante.Models.ItemCardapio>
+
+<h3 style="color: var(--gold); margin-bottom: 20px;">Sugestões do Chefe (Hoje)</h3>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+    <div style="background: rgba(15, 23, 42, 0.5); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <h4 style="color: white; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Almoço ☀️</span>
+            <button onclick="sortearSugestao(0)" class="btn-outline-gold" style="font-size: 0.7rem; padding: 4px 10px; cursor: pointer;">🎲 Sortear</button>
+        </h4>
+        @if (ViewBag.SugestaoAlmoco != null)
+        {
+            <div style="color: var(--gold); font-weight: bold; font-size: 1.1rem;">@ViewBag.SugestaoAlmoco.ItemCardapio.Nome</div>
+            <div style="color: #22c55e; font-size: 0.8rem; margin-top: 5px;">✓ 20% de desconto aplicado.</div>
+        }
+        else
+        {
+            <div style="color: #ef4444; font-size: 0.85rem; padding: 5px; border: 1px dashed #ef4444; border-radius: 5px; text-align: center;">Nenhuma sugestão definida.</div>
+        }
+    </div>
+
+    <div style="background: rgba(15, 23, 42, 0.5); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <h4 style="color: white; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Jantar 🌙</span>
+            <button onclick="sortearSugestao(1)" class="btn-outline-gold" style="font-size: 0.7rem; padding: 4px 10px; cursor: pointer;">🎲 Sortear</button>
+        </h4>
+        @if (ViewBag.SugestaoJantar != null)
+        {
+            <div style="color: var(--gold); font-weight: bold; font-size: 1.1rem;">@ViewBag.SugestaoJantar.ItemCardapio.Nome</div>
+            <div style="color: #22c55e; font-size: 0.8rem; margin-top: 5px;">✓ 20% de desconto aplicado.</div>
+        }
+        else
+        {
+            <div style="color: #ef4444; font-size: 0.85rem; padding: 5px; border: 1px dashed #ef4444; border-radius: 5px; text-align: center;">Nenhuma sugestão definida.</div>
+        }
+    </div>
+</div>
+
+<h4 style="color: white; margin-bottom: 15px;">Escolher Manualmente</h4>
+<div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 5px; background: rgba(15, 23, 42, 0.3);">
+    <table style="width: 100%; border-collapse: collapse; color: white; font-size: 0.9rem;">
+        <thead style="background: #1e293b; position: sticky; top: 0; z-index: 10;">
+            <tr>
+                <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid var(--gold);">Prato</th>
+                <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid var(--gold);">Período</th>
+                <th style="padding: 12px 10px; text-align: center; border-bottom: 2px solid var(--gold);">Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.OrderBy(x => x.Periodo))
+            {
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px 10px;">@p.Nome</td>
+                    <td style="padding: 12px 10px;">
+                        @if (p.Periodo == 0)
+                        {
+                            <span style="color: #fbbf24;">☀️ Almoço</span>
+                        }
+                        else
+                        {
+
+                            <span style="color: #818cf8;">🌙 Jantar</span>
+                        }
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                        <button onclick="definirSugestaoManual(@p.Id)" class="btn-gold" style="padding: 5px 12px; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">
+                            Marcar como Sugestão
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -174,6 +174,33 @@ namespace restaurante.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DesativarConta()
+        {
+            var usuario = await _userManager.GetUserAsync(User);
+
+            if (usuario == null)
+            {
+                return Unauthorized();
+            }
+
+            // Aplica o Soft Delete
+            usuario.IsAtivo = false;
+            var resultado = await _userManager.UpdateAsync(usuario);
+
+            if (resultado.Succeeded)
+            {
+                // Desloga o usuário imediatamente
+                await _signInManager.SignOutAsync();
+
+                // Usa o nosso sistema de alertas do layout para exibir a mensagem na tela inicial
+                TempData["MensagemErroSistema"] = "Sua conta foi desativada com sucesso. Esperamos ver você novamente no futuro!";
+                return Ok();
+            }
+
+            return BadRequest("Não foi possível desativar a conta no momento.");
+        }
+
         // ==========================================
         // 3. GERENCIAMENTO DE ENDEREÇOS
         // ==========================================

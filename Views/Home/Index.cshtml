@@ -1,9 +1,9 @@
-﻿@{
+﻿@model restaurante.ViewModels.HomeViewModel
+@{
     ViewData["Title"] = "Sabor & Arte - Início";
 }
 
 <section class="hero-section" style="height: 85vh; display: flex; align-items: center; justify-content: center; position: relative; background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070') no-repeat center center; background-size: cover;">
-    
     <div class="container" style="text-align: center;">
         <h1 style="color: var(--gold); font-size: 4.5rem; font-weight: bold; margin-bottom: 20px; letter-spacing: -1px;">
             Bem-vindo ao Sabor & Arte
@@ -15,17 +15,17 @@
         </p>
 
         <div style="display: flex; gap: 20px; justify-content: center;">
-            <a href="#cardapio" class="btn-gold" style="font-size: 1.1rem; padding: 15px 45px;">
+            <a href="#cardapio" class="btn-gold" style="font-size: 1.1rem; padding: 15px 45px; text-decoration: none;">
                 Ver Cardápio
             </a>
             
-            <a href="#pedidos" class="btn-outline-gold" style="font-size: 1.1rem; padding: 15px 45px;">
+            <a href="#pedidos" class="btn-outline-gold" style="font-size: 1.1rem; padding: 15px 45px; text-decoration: none;">
                 Fazer Pedido
             </a>
 
             @if (!User.Identity.IsAuthenticated)
             {
-                <button onclick="abrirModal()" class="btn-gold" style="font-size: 1.1rem; padding: 15px 45px;">
+                <button onclick="abrirModal()" class="btn-gold" style="font-size: 1.1rem; padding: 15px 45px; border: none; cursor: pointer;">
                     Criar Conta Agora
                 </button>
             }
@@ -33,9 +33,217 @@
     </div>
 </section>
 
-<section id="cardapio" style="padding: 100px 0;">
+@if (Model.Sugestoes.Any())
+{
+    <section class="chef-suggestion" style="padding: 80px 0; background-color: #0f172a;">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 50px;">
+                <h2 style="color: var(--gold); font-size: 2.5rem; margin-bottom: 10px;">Sugestão do Chefe</h2>
+                <p style="color: var(--text-gray); font-size: 1.1rem;">Pratos selecionados com 20% de desconto</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px;">
+                @foreach (var prato in Model.Sugestoes)
+                {
+                    <div style="background: #1e293b; border: 1px solid var(--gold); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative;">
+                        <div style="position: absolute; top: 15px; right: 15px; background: var(--gold); color: #1e293b; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; z-index: 2;">-20% OFF</div>
+                        
+                        <div style="height: 250px; background-color: #2a3454; overflow: hidden;">
+                            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800" alt="@prato.Nome" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+
+                        <div style="padding: 30px; flex: 1; display: flex; flex-direction: column;">
+                            <h3 style="color: white; font-size: 1.5rem; margin-bottom: 15px;">@prato.Nome</h3>
+                            <p style="color: var(--text-gray); font-size: 1rem; margin-bottom: 25px; flex: 1;">@prato.Descricao</p>
+
+                            <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 20px;">Ingredientes: @prato.Ingredientes</p>
+
+                            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
+                                <span style="text-decoration: line-through; color: var(--text-gray); font-size: 1.1rem;">R$ @prato.PrecoBase.ToString("F2")</span>
+                                <span style="color: #22c55e; font-size: 1.8rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
+                            </div>
+
+                            @if (!User.Identity.IsAuthenticated)
+                            {
+                                <button onclick="abrirModalLogin()" class="btn-outline-gold" style="width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1rem;">Fazer Login para Pedir</button>
+                            }
+                            else if ((prato.Periodo == 0 && !Model.PodePedirAlmoco) || (prato.Periodo == 1 && !Model.PodePedirJantar))
+                            {
+                                <button disabled style="background: #453b1b; color: #a1a1aa; border: none; font-weight: bold; width: 100%; padding: 15px; border-radius: 8px; cursor: not-allowed; font-size: 1rem;">Indisponível no Momento</button>
+                            }
+                            else
+                            {
+                                <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1rem;">Selecionar</a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<section id="cardapio" style="padding: 100px 0; background-color: #0b1120;">
     <div class="container">
-        <h2 style="color: var(--gold); text-align: center;">Nosso Cardápio</h2>
-        <p style="text-align: center; color: var(--text-gray);">Em breve, os pratos deliciosos aparecerão aqui!</p>
+        <div style="text-align: center; margin-bottom: 50px;">
+            <h2 style="color: var(--gold); font-size: 2.5rem; margin-bottom: 30px;">Nosso Cardápio</h2>
+            
+            <div style="display: inline-flex; background: #1e293b; border-radius: 10px; padding: 6px;">
+                <button class="tab-btn active" onclick="showCardapio('almoco')" style="padding: 12px 40px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; background: var(--gold); color: #1e293b; font-size: 1.1rem;">Almoço</button>
+                <button class="tab-btn" onclick="showCardapio('jantar')" style="padding: 12px 40px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; background: transparent; color: white; font-size: 1.1rem;">Jantar</button>
+            </div>
+        </div>
+
+        <div id="grid-almoco">
+            @if (!Model.PodePedirAlmoco)
+            {
+                <div style="background: #b45309; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 30px; font-weight: 500; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    ⚠️ Este prato só está disponível no horário de almoço (11h às 15h)
+                </div>
+            }
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px;">
+                @foreach (var prato in Model.ItensAlmoco)
+                {
+                    <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; @(prato.IsSugestao ? "border-color: var(--gold);" : "")">
+                        @if (prato.IsSugestao)
+                        {
+                            <div style="position: absolute; top: 12px; right: 12px; background: var(--gold); color: #1e293b; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; z-index: 2;">-20% OFF</div>
+                        }
+                        
+                        <div style="height: 200px; background-color: #2a3454;">
+                            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600" alt="@prato.Nome" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+
+                        <div style="padding: 25px; flex: 1; display: flex; flex-direction: column;">
+                            <h3 style="color: white; font-size: 1.3rem; margin-bottom: 10px;">@prato.Nome</h3>
+                            <p style="color: var(--text-gray); font-size: 0.95rem; margin-bottom: 15px; flex: 1;">@prato.Descricao</p>
+                            
+                            <div style="margin-bottom: 15px;">
+                                @if (prato.IsSugestao)
+                                {
+                                    <span style="text-decoration: line-through; color: var(--text-gray); font-size: 0.95rem; margin-right: 10px;">R$ @prato.PrecoBase.ToString("F2")</span>
+                                    <span style="color: #22c55e; font-size: 1.4rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
+                                }
+                                else
+                                {
+                                    <span style="color: var(--gold); font-size: 1.4rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
+                                }
+                            </div>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.05); margin-bottom: 15px;" />
+                            <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 25px; min-height: 40px;">Ingredientes: @prato.Ingredientes</p>
+                            
+                            @if (!User.Identity.IsAuthenticated)
+                            {
+                                <button onclick="abrirModalLogin()" class="btn-outline-gold" style="width: 100%; padding: 12px; border-radius: 6px; font-weight: bold;">Fazer Login</button>
+                            }
+                            else if (Model.PodePedirAlmoco)
+                            {
+                                <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold;">Selecionar</a>
+                            }
+                            else
+                            {
+                                <button disabled style="background: #453b1b; color: #a1a1aa; border: none; font-weight: bold; width: 100%; padding: 12px; border-radius: 6px; cursor: not-allowed;">Indisponível</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div id="grid-jantar" style="display: none;">
+            @if (!Model.PodePedirJantar)
+            {
+                <div style="background: #b45309; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 30px; font-weight: 500; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    ⚠️ Este prato só está disponível no horário de jantar (18h às 23h)
+                </div>
+            }
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px;">
+                @foreach (var prato in Model.ItensJantar)
+                {
+                    <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; @(prato.IsSugestao ? "border-color: var(--gold);" : "")">
+                        @if (prato.IsSugestao)
+                        {
+                            <div style="position: absolute; top: 12px; right: 12px; background: var(--gold); color: #1e293b; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; z-index: 2;">-20% OFF</div>
+                        }
+                        
+                        <div style="height: 200px; background-color: #2a3454;">
+                            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600" alt="@prato.Nome" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+
+                        <div style="padding: 25px; flex: 1; display: flex; flex-direction: column;">
+                            <h3 style="color: white; font-size: 1.3rem; margin-bottom: 10px;">@prato.Nome</h3>
+                            <p style="color: var(--text-gray); font-size: 0.95rem; margin-bottom: 15px; flex: 1;">@prato.Descricao</p>
+                            
+                            <div style="margin-bottom: 15px;">
+                                @if (prato.IsSugestao)
+                                {
+                                    <span style="text-decoration: line-through; color: var(--text-gray); font-size: 0.95rem; margin-right: 10px;">R$ @prato.PrecoBase.ToString("F2")</span>
+                                    <span style="color: #22c55e; font-size: 1.4rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
+                                }
+                                else
+                                {
+                                    <span style="color: var(--gold); font-size: 1.4rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
+                                }
+                            </div>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.05); margin-bottom: 15px;" />
+                            <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 25px; min-height: 40px;">Ingredientes: @prato.Ingredientes</p>
+                            
+                            @if (!User.Identity.IsAuthenticated)
+                            {
+                                <button onclick="abrirModalLogin()" class="btn-outline-gold" style="width: 100%; padding: 12px; border-radius: 6px; font-weight: bold;">Fazer Login</button>
+                            }
+                            else if (Model.PodePedirJantar)
+                            {
+                                <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold;">Selecionar</a>
+                            }
+                            else
+                            {
+                                <button disabled style="background: #453b1b; color: #a1a1aa; border: none; font-weight: bold; width: 100%; padding: 12px; border-radius: 6px; cursor: not-allowed;">Indisponível</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 </section>
+
+<section class="pedidos" id="pedidos" style="padding: 100px 0; min-height: 400px; background-color: #0f172a;">
+    <div class="container">
+        <h2 style="color: var(--gold); text-align: center; font-size: 2.5rem; margin-bottom: 20px;">Fazer Pedido</h2>
+        <p style="color: var(--text-gray); text-align: center; font-size: 1.1rem;">(A seção de fechamento de carrinho e taxas será implementada aqui na próxima etapa)</p>
+    </div>
+</section>
+
+<section class="reservas" id="reservas" style="padding: 100px 0; background-color: #0b1120; min-height: 400px;">
+    <div class="container">
+        <h2 style="color: var(--gold); text-align: center; font-size: 2.5rem; margin-bottom: 20px;">Reservar Mesa</h2>
+        <p style="color: var(--text-gray); text-align: center; font-size: 1.1rem;">(A planta baixa do restaurante será exibida aqui)</p>
+    </div>
+</section>
+
+<script>
+    function showCardapio(periodo) {
+        var btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(function(btn) {
+            btn.style.background = 'transparent';
+            btn.style.color = 'white';
+        });
+        
+        var activeBtn = event.currentTarget;
+        activeBtn.style.background = 'var(--gold)';
+        activeBtn.style.color = '#1e293b';
+
+        if (periodo === 'almoco') {
+            document.getElementById('grid-almoco').style.display = 'block';
+            document.getElementById('grid-jantar').style.display = 'none';
+        } else {
+            document.getElementById('grid-almoco').style.display = 'none';
+            document.getElementById('grid-jantar').style.display = 'block';
+        }
+    }
+</script>
