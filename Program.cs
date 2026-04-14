@@ -13,7 +13,7 @@ builder.Services.AddControllersWithViews();
 
 // 2. CONFIGURAÇÃO DO IDENTITY (Com suporte a Roles)
 builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options => {
-    options.Password.RequireDigit = false; // Facilitando para teste
+    options.Password.RequireDigit = false;
     options.Password.RequiredLength = 6;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
@@ -24,7 +24,7 @@ builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options => {
 
 var app = builder.Build();
 
-// 3. RESET DO BANCO E CRIAÇÃO DE ROLES/ADM
+// 3. RESET DO BANCO E CRIAÇÃO DE ROLES/ADM/CARDÁPIO
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -34,7 +34,7 @@ using (var scope = app.Services.CreateScope())
         var userManager = services.GetRequiredService<UserManager<Usuario>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
 
-        // Reseta o banco
+        // Reseta o banco totalmente
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
 
@@ -48,7 +48,7 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        // CRIAÇÃO DO ADM PADRÃO (Para você testar o sistema)
+        // CRIAÇÃO DO ADM PADRÃO
         var adminUser = new Usuario
         {
             UserName = "admin",
@@ -69,7 +69,24 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        Console.WriteLine(">>> SUCESSO: Banco recriado com Roles e ADM configurados! <<<");
+        // ====================================================
+        // NOVO: EXECUÇÃO DO ARQUIVO IMPORT.SQL
+        // ====================================================
+        var scriptPath = Path.Combine(AppContext.BaseDirectory, "import.sql");
+        if (File.Exists(scriptPath))
+        {
+            var sql = File.ReadAllText(scriptPath);
+            // Executa o SQL bruto do seu arquivo
+            context.Database.ExecuteSqlRaw(sql);
+            Console.WriteLine(">>> SUCESSO: import.sql executado e cardápio populado! <<<");
+        }
+        else
+        {
+            Console.WriteLine(">>> AVISO: import.sql não encontrado. Verifique as propriedades do arquivo! <<<");
+        }
+        // ====================================================
+
+        Console.WriteLine(">>> SUCESSO: Banco recriado com Roles, ADM e Cardápio! <<<");
     }
     catch (Exception ex)
     {
@@ -88,7 +105,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Importante: Authentication sempre antes de Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
