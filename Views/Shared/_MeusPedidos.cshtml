@@ -1,0 +1,115 @@
+﻿@model IEnumerable<restaurante.Models.Pedido>
+@using restaurante.Models
+
+<div class="pedidos-lista">
+    <h3 style="color: var(--gold); margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Meus Pedidos
+    </h3>
+
+    @if (!Model.Any())
+    {
+        <p style="color: var(--text-gray); text-align: center; padding: 30px;">Você ainda não fez nenhum pedido.</p>
+    }
+    else
+    {
+        foreach (var pedido in Model)
+        {
+            // 1. Lógica para descobrir o Status Real e o Tipo de Atendimento
+            string statusExibicao = "Desconhecido";
+            string tipoAtendimentoNome = "Atendimento";
+            bool podeCancelar = false;
+
+            if (pedido.IsCancelado)
+            {
+                statusExibicao = "Cancelado";
+            }
+            else if (pedido.Atendimento is AtendimentoRetirada retirada)
+            {
+                tipoAtendimentoNome = "Retirada no Local";
+                statusExibicao = retirada.Status == AtendimentoRetirada.StatusRetirada.EmProcesso ? "Em Processo" :
+                                 retirada.Status == AtendimentoRetirada.StatusRetirada.PedidoPronto ? "Pedido Pronto" : "Cancelado";
+                
+                podeCancelar = retirada.Status == AtendimentoRetirada.StatusRetirada.EmProcesso;
+            }
+            else if (pedido.Atendimento is AtendimentoDeliveryProprio proprio)
+            {
+                tipoAtendimentoNome = "Delivery Próprio";
+                statusExibicao = proprio.Status == StatusDelivery.EmProcesso ? "Em Processo" :
+                                 proprio.Status == StatusDelivery.SaiuParaEntrega ? "Saiu Para Entrega" :
+                                 proprio.Status == StatusDelivery.Entregue ? "Entregue" : "Cancelado";
+                                 
+                podeCancelar = proprio.Status == StatusDelivery.EmProcesso;
+            }
+            else if (pedido.Atendimento is AtendimentoDeliveryApp app)
+            {
+                tipoAtendimentoNome = $"Delivery App ({app.NomeAplicativo})";
+                statusExibicao = app.Status == StatusDelivery.EmProcesso ? "Em Processo" :
+                                 app.Status == StatusDelivery.SaiuParaEntrega ? "Saiu Para Entrega" :
+                                 app.Status == StatusDelivery.Entregue ? "Entregue" : "Cancelado";
+                                 
+                podeCancelar = app.Status == StatusDelivery.EmProcesso;
+            }
+            
+            // 2. Renderização do HTML do Pedido
+            <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 15px;">
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <div>
+                        <strong style="color: white; display: block; font-size: 1.2rem;">Pedido #@pedido.Id</strong>
+                        <span style="font-size: 0.8rem; color: var(--text-gray); text-transform: uppercase;">
+                            @tipoAtendimentoNome
+                        </span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="color: var(--text-gray); display: block;">@pedido.DataHora.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    @foreach (var item in pedido.ItensPedido)
+                    {
+                        <div style="color: white; font-size: 0.95rem;">• @item.Quantidade x @item.ItemCardapio.Nome</div>
+                    }
+                </div>
+
+                <p style="color: white; margin-bottom: 5px; font-size: 1.1rem;">
+                    Total: <strong style="color: #22c55e;">R$ @pedido.PrecoFinal.ToString("F2")</strong>
+                </p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                    
+                    <span style="background: @(pedido.IsCancelado ? "rgba(239, 68, 68, 0.1)" : "rgba(212, 175, 55, 0.1)");
+                        color: @(pedido.IsCancelado ? "#ef4444" : "var(--gold)");
+                        border: 1px solid @(pedido.IsCancelado ? "#ef4444" : "var(--gold)");
+                        padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
+                        @statusExibicao
+                    </span>
+
+                    @if (podeCancelar && !pedido.IsCancelado)
+                    {
+                        <button onclick="cancelarPedido(@pedido.Id)" class="btn-outline-gold" style="padding: 5px 15px; border-color: #ef4444; color: #ef4444; font-size: 0.85rem;">
+                            Cancelar Pedido
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function cancelarPedido(id) {
+        if(confirm("Tem certeza que deseja cancelar este pedido?")) {
+            fetch('/Pedido/CancelarPedido/' + id, { method: 'POST' })
+            .then(async res => {
+                if(res.ok) {
+                    alert("Cancelado com sucesso!");
+                    // Atualiza a view na mesma hora chamando a função pai da tela de perfil
+                    carregarMeusPedidos();
+                } else {
+                    alert(await res.text());
+                }
+            });
+        }
+    }
+</script>

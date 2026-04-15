@@ -4,6 +4,7 @@
     {
         EmProcesso,
         SaiuParaEntrega,
-        Entregue
+        Entregue,
+        Cancelado
     }
 }

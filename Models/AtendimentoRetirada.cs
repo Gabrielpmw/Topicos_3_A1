@@ -5,9 +5,11 @@
         public enum StatusRetirada
         {
             EmProcesso,
-            PedidoPronto
+            PedidoPronto,
+            Cancelado
         }
 
         public StatusRetirada Status { get; set; }
     }
 }
+    

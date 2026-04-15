@@ -250,6 +250,7 @@
             }
             function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
 
+            // A MÁGICA ESTÁ AQUI: ADICIONAMOS A ABA DE PEDIDOS
             function carregarAba(aba) {
                 $(".perfil-nav-btn").removeClass("active");
             
@@ -263,18 +264,22 @@
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Conta/ObterEnderecos");
                 }
+                // ->> ESTE BLOCO ESTAVA FALTANDO! <<-
+                else if (aba === 'Pedidos' && document.getElementById('btnAbaPedidos')) {
+                    $("#btnAbaPedidos").addClass("active");
+                    $("#perfilContent").html('<p style="color: white;">Carregando seus pedidos...</p>');
+                    $("#perfilContent").load("/Pedido/ObterMeusPedidos");
+                }
                 else if (aba === 'Pratos' && document.getElementById('btnAbaPratos')) {
                     $("#btnAbaPratos").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Admin/ObterItensCardapio");
                 }
-                // NOVA ABA: SUGESTÕES DO CHEFE
                 else if (aba === 'Sugestoes' && document.getElementById('btnAbaSugestoes')) {
                     $("#btnAbaSugestoes").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Admin/ObterSugestoes");
                 }
-                // ABA: GERENCIAR USUÁRIOS
                 else if (aba === 'Usuarios' && document.getElementById('btnAbaUsuarios')) {
                     $("#btnAbaUsuarios").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
@@ -283,6 +288,12 @@
                 else {
                     $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
                 }
+            }
+
+            // Para fazer com que o botão "Cancelar Pedido" funcione corretamente,
+            // precisamos garantir que ele atualize a aba de pedidos sem recarregar a página inteira:
+            window.carregarMeusPedidos = function() {
+                carregarAba('Pedidos');
             }
 
             // --- FUNÇÕES DE CONTA E PERFIL ---

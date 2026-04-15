@@ -10,8 +10,8 @@ namespace restaurante.Data
         public RestauranteContext(DbContextOptions<RestauranteContext> options) : base(options)
         {
         }
-        public DbSet<Usuario> Usuarios { get; set; }
 
+        public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Endereco> Enderecos { get; set; }
         public DbSet<ItemCardapio> ItensCardapio { get; set; }
         public DbSet<Ingrediente> Ingredientes { get; set; }
@@ -21,6 +21,9 @@ namespace restaurante.Data
         public DbSet<Atendimento> Atendimentos { get; set; }
         public DbSet<Mesa> Mesas { get; set; }
         public DbSet<Reserva> Reservas { get; set; }
+
+        // Nova tabela de Pagamentos adicionada aqui
+        public DbSet<Pagamento> Pagamentos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +36,14 @@ namespace restaurante.Data
             modelBuilder.Entity<AtendimentoRetirada>();
             modelBuilder.Entity<AtendimentoDeliveryProprio>();
             modelBuilder.Entity<AtendimentoDeliveryApp>();
+
+            // Formatação global para propriedades decimais (Dinheiro/Taxas)
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
+            {
+                property.SetColumnType("decimal(18,2)");
+            }
         }
     }
 }
