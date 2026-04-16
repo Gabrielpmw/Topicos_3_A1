@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +9,7 @@ using restaurante.Models;
 using restaurante.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,11 +20,14 @@ namespace restaurante.Controllers
     {
         private readonly RestauranteContext _context;
         private readonly UserManager<Usuario> _userManager;
+        private readonly IWebHostEnvironment _webHostEnvironment; // NOVO: Permite salvar o arquivo fisicamente na pasta wwwroot
 
-        public AdminController(RestauranteContext context, UserManager<Usuario> userManager)
+        // Injeção do IWebHostEnvironment adicionada ao construtor
+        public AdminController(RestauranteContext context, UserManager<Usuario> userManager, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _userManager = userManager;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // ==========================================
@@ -35,7 +41,6 @@ namespace restaurante.Controllers
                 .Include(i => i.Ingredientes)
                 .AsQueryable();
 
-            // Aplica o filtro de visualização solicitado pelo Admin
             if (filtro == "ativos")
                 query = query.Where(i => i.IsAtivo);
             else if (filtro == "inativos")
@@ -49,7 +54,8 @@ namespace restaurante.Controllers
                     Descricao = i.Descricao,
                     PrecoBase = i.PrecoBase,
                     Periodo = (int)i.Periodo,
-                    IsAtivo = i.IsAtivo, // Novo campo para o visual
+                    IsAtivo = i.IsAtivo,
+                    ImagemUrl = i.ImagemUrl, // Adicionado para carregar a imagem na tela
                     IngredientesIds = i.Ingredientes
                                         .Where(ing => ing.IsAtivo)
                                         .Select(ing => ing.Id)
@@ -59,9 +65,16 @@ namespace restaurante.Controllers
             return PartialView("_GerenciarCardapio", itens);
         }
 
+        // NOVO: Mudamos para [FromForm] para suportar envio de arquivos, e adicionamos o IFormFile
         [HttpPost]
-        public async Task<IActionResult> SalvarItemCardapio([FromBody] ItemCardapioViewModel model)
+        public async Task<IActionResult> SalvarItemCardapio([FromForm] ItemCardapioViewModel model, IFormFile imagemArquivo)
         {
+            // Removemos a validação padrão de texto da URL porque agora tratamos o arquivo físico
+            ModelState.Remove("ImagemUrl");
+
+            // CORREÇÃO: Avisamos ao C# para não dar erro se o usuário não enviar nenhum arquivo físico
+            ModelState.Remove("imagemArquivo");
+
             if (!ModelState.IsValid)
             {
                 var erros = string.Join("\n", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -70,12 +83,36 @@ namespace restaurante.Controllers
 
             try
             {
+                // 1. Lógica de salvamento do arquivo físico no seu computador/servidor
+                if (imagemArquivo != null && imagemArquivo.Length > 0)
+                {
+                    // Define onde salvar: wwwroot/images/cardapio
+                    string pastaUploads = Path.Combine(_webHostEnvironment.WebRootPath, "images", "cardapio");
+
+                    if (!Directory.Exists(pastaUploads))
+                        Directory.CreateDirectory(pastaUploads);
+
+                    // Cria um nome único para evitar sobrescrever imagens com o mesmo nome
+                    string nomeUnicoArquivo = Guid.NewGuid().ToString() + "_" + Path.GetFileName(imagemArquivo.FileName);
+                    string caminhoArquivo = Path.Combine(pastaUploads, nomeUnicoArquivo);
+
+                    // Copia o arquivo do navegador para a pasta
+                    using (var fileStream = new FileStream(caminhoArquivo, FileMode.Create))
+                    {
+                        await imagemArquivo.CopyToAsync(fileStream);
+                    }
+
+                    // Guarda apenas a rota para o banco de dados
+                    model.ImagemUrl = "/images/cardapio/" + nomeUnicoArquivo;
+                }
+
+                // 2. Lógica de salvar os dados no banco
                 var ids = model.IngredientesIds ?? new List<int>();
                 var ingredientesSelecionados = await _context.Ingredientes
                     .Where(i => ids.Contains(i.Id) && i.IsAtivo)
                     .ToListAsync();
 
-                if (model.Id.HasValue && model.Id.Value > 0)
+                if (model.Id.HasValue && model.Id.Value > 0) // EDIÇÃO
                 {
                     var itemDb = await _context.ItensCardapio
                         .Include(i => i.Ingredientes)
@@ -88,6 +125,12 @@ namespace restaurante.Controllers
                         itemDb.PrecoBase = model.PrecoBase;
                         itemDb.Periodo = (ItemCardapio.PeriodoCardapio)model.Periodo;
 
+                        // Só atualiza a imagem no banco se o usuário tiver escolhido um arquivo novo
+                        if (!string.IsNullOrEmpty(model.ImagemUrl))
+                        {
+                            itemDb.ImagemUrl = model.ImagemUrl;
+                        }
+
                         itemDb.Ingredientes.Clear();
                         foreach (var ing in ingredientesSelecionados)
                         {
@@ -97,14 +140,21 @@ namespace restaurante.Controllers
                         _context.ItensCardapio.Update(itemDb);
                     }
                 }
-                else
+                else // CRIAÇÃO
                 {
+                    // Se o usuário não enviou foto, o sistema preenche com a foto padrão automaticamente
+                    if (string.IsNullOrEmpty(model.ImagemUrl))
+                    {
+                        model.ImagemUrl = "/sem-foto.png";
+                    }
+
                     var novoItem = new ItemCardapio
                     {
                         Nome = model.Nome,
                         Descricao = model.Descricao,
                         PrecoBase = model.PrecoBase,
                         Periodo = (ItemCardapio.PeriodoCardapio)model.Periodo,
+                        ImagemUrl = model.ImagemUrl, // Vai salvar a foto enviada ou a /sem-foto.png
                         IsAtivo = true,
                         Ingredientes = ingredientesSelecionados
                     };
@@ -116,18 +166,16 @@ namespace restaurante.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest($"Erro interno ao salvar no banco: {ex.Message}");
+                return BadRequest($"Erro interno ao salvar: {ex.Message}");
             }
         }
 
-        // NOVO: Soft Delete / Ativação de Pratos
         [HttpPost]
         public async Task<IActionResult> AlternarStatusPrato(int id)
         {
             var prato = await _context.ItensCardapio.FindAsync(id);
             if (prato == null) return NotFound("Prato não encontrado.");
 
-            // Inverte o status: se está ativo, desativa. Se está inativo, ativa.
             prato.IsAtivo = !prato.IsAtivo;
 
             _context.ItensCardapio.Update(prato);
@@ -144,9 +192,11 @@ namespace restaurante.Controllers
         [HttpGet]
         public async Task<IActionResult> ObterIngredientes()
         {
+            // Alterado para trazer todos (ativos e inativos) ordenados
             var ingredientes = await _context.Ingredientes
-                .Where(i => i.IsAtivo)
-                .Select(i => new { i.Id, i.Nome })
+                .Select(i => new { i.Id, i.Nome, i.IsAtivo })
+                .OrderByDescending(i => i.IsAtivo)
+                .ThenBy(i => i.Nome)
                 .ToListAsync();
             return Json(ingredientes);
         }
@@ -180,12 +230,12 @@ namespace restaurante.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> RemoverIngrediente(int id)
+        public async Task<IActionResult> AlternarStatusIngrediente(int id)
         {
             var ingrediente = await _context.Ingredientes.FindAsync(id);
             if (ingrediente != null)
             {
-                ingrediente.IsAtivo = false;
+                ingrediente.IsAtivo = !ingrediente.IsAtivo;
                 _context.Ingredientes.Update(ingrediente);
                 await _context.SaveChangesAsync();
                 return Ok();

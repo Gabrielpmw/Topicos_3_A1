@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using restaurante.Data;
 using restaurante.ViewModels;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace restaurante.Controllers
 {
@@ -45,6 +48,9 @@ namespace restaurante.Controllers
                 Descricao = p.Descricao,
                 PrecoBase = p.PrecoBase,
                 Periodo = (int)p.Periodo,
+
+                // MAPEAMENTO DA IMAGEM ADICIONADO AQUI:
+                ImagemUrl = p.ImagemUrl,
 
                 // Pega os ingredientes ativos do prato e junta os nomes separados por vírgula
                 Ingredientes = string.Join(", ", p.Ingredientes.Where(ing => ing.IsAtivo).Select(ing => ing.Nome)),

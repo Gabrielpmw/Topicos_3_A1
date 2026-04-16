@@ -45,10 +45,12 @@ else
 
                 <div style="display: flex; gap: 8px; align-items: center;">
                     @{
+                        // Aqui tratamos tanto a lista de ingredientes quanto a URL da imagem para o JS não quebrar
                         var jsonIngredientes = "[" + string.Join(",", item.IngredientesIds) + "]";
+                        var imgSegura = string.IsNullOrEmpty(item.ImagemUrl) ? "" : item.ImagemUrl.Replace("'", "\\'");
                     }
                     
-                    <button onclick="abrirModalItemCardapio(@item.Id, '@item.Nome.Replace("'", "\\'")', '@item.Descricao.Replace("'", "\\'")', @item.PrecoBase.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), @item.Periodo, '@jsonIngredientes')" class="btn-outline-gold" style="padding: 7px 12px; font-size: 0.75rem;">Editar</button>
+                    <button onclick="abrirModalItemCardapio(@item.Id, '@item.Nome.Replace("'", "\\'")', '@item.Descricao.Replace("'", "\\'")', @item.PrecoBase.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), @item.Periodo, '@imgSegura', '@jsonIngredientes')" class="btn-outline-gold" style="padding: 7px 12px; font-size: 0.75rem;">Editar</button>
                     
                     @if (item.IsAtivo)
                     {

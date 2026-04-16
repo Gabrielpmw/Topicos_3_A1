@@ -1,6 +1,5 @@
 wwwroot\css\site.css
 wwwroot\favicon.ico
-wwwroot\img\MapaMesas.png
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
@@ -62,6 +61,14 @@ wwwroot\lib\jquery\dist\jquery.slim.js
 wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
+wwwroot\img\MapaMesas.png
+wwwroot\img\baiao.png
+wwwroot\images\cardapio\69004b11-9752-4ec1-8436-3381ff4238b4_baiao.png
+wwwroot\images\cardapio\bd800a72-3120-4676-a522-3c25217bfe55_baiao.png
+wwwroot\images\cardapio\862ec724-d056-4771-8f43-4a84b590d06c_MapaMesas.png
+wwwroot\images\cardapio\3742d004-2c30-4b9b-8eb4-b795ddaa206e_MapaMesas.png
+wwwroot\images\cardapio\580de4a9-c5ac-4770-8328-132874f217d8_MapaMesas.png
+wwwroot\images\cardapio\7a7fea6b-9dcc-4707-a683-d8255f1b76ad_baiao.png
 C:\Users\gabriel\source\repos\restaurante\restaurante\wwwroot\css\site.css
 C:\Users\gabriel\source\repos\restaurante\restaurante\wwwroot\favicon.ico
 C:\Users\gabriel\source\repos\restaurante\restaurante\wwwroot\js\site.js

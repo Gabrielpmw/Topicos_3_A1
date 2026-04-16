@@ -268,7 +268,7 @@
             
             <form id="formItemCardapio" onsubmit="salvarItemCardapio(event)">
                 <input type="hidden" id="itemId">
-                <div class="form-group">
+                <input type="hidden" id="itemImagemUrlAntiga"> <div class="form-group">
                     <label>Nome do Prato</label>
                     <input type="text" id="itemNome" class="form-input" required>
                 </div>
@@ -276,6 +276,12 @@
                     <label>Descrição</label>
                     <textarea id="itemDescricao" class="form-input" rows="3" required style="resize: vertical;"></textarea>
                 </div>
+                
+                <div class="form-group">
+                    <label>Foto do Prato</label>
+                    <input type="file" id="itemImagemArquivo" class="form-input" accept="image/*">
+                    <small id="textoImagemAtual" style="color: var(--gold); display: block; margin-top: 5px; font-weight: bold;"></small> </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Preço Base (R$)</label>
@@ -429,7 +435,6 @@
                 return;
             }
 
-            // VALIDAÇÃO DA SENHA
             const erroSenha = validarForcaDaSenha(senha);
             if (erroSenha) {
                 alert(erroSenha);
@@ -479,7 +484,6 @@
                 return;
             }
 
-            // VALIDAÇÃO DA NOVA SENHA
             const erroSenha = validarForcaDaSenha(novaSenha);
             if (erroSenha) {
                 alert(erroSenha);
@@ -527,11 +531,8 @@
                     .then(res => res.json())
                     .then(data => {
                         if (!data.erro) {
-                            // Em Palmas, o ViaCEP as vezes joga a Quadra no Bairro e a Alameda no Logradouro
                             document.getElementById('endQuadra').value = data.bairro || '';
                             document.getElementById('endAlameda').value = data.logradouro || '';
-                            
-                            // Foca automaticamente no campo Lote para o usuário continuar digitando
                             document.getElementById('endLote').focus();
                         } else {
                             alert("Atenção: O CEP informado não foi encontrado.");
@@ -675,7 +676,6 @@
             }
         }
 
-        // --- FUNÇÕES DE CONTA E PERFIL ---
         function desativarMinhaConta() {
             if(confirm("ATENÇÃO: Tem certeza absoluta que deseja desativar sua conta? Você será desconectado imediatamente.")) {
                 fetch('/Conta/DesativarConta', { method: 'POST' })
@@ -687,12 +687,14 @@
                         alert(msg || "Erro ao tentar desativar a conta.");
                     }
                 }).catch(() => {
-                    alert("Erro de connection com o servidor.");
+                    alert("Erro de conexão com o servidor.");
                 });
             }
         }
 
-        // --- FUNÇÕES DE CARDÁPIO E INGREDIENTES (ADMIN - AJAX) ---
+        // ========================================================
+        // CARDÁPIO E INGREDIENTES (ATUALIZADO PARA IMAGEM E SOFT DELETE)
+        // ========================================================
         let ingredientesChecadosGlobal = [];
 
         function carregarIngredientesNoSelect(idsSelecionados = []) {
@@ -712,18 +714,34 @@
                     data.forEach(ing => {
                         const isChecked = ingredientesChecadosGlobal.includes(ing.id) ? 'checked' : '';
                         
-                        container.innerHTML += `
-                            <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <label style="display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; flex: 1;">
-                                    <input type="checkbox" class="ing-checkbox" value="${ing.id}" ${isChecked} onchange="atualizarChecados(this)">
-                                    <span id="ing-nome-${ing.id}" style="color: white; font-size: 0.9rem;">${ing.nome}</span>
-                                </label>
-                                <div id="ing-acoes-${ing.id}" style="display: flex; gap: 8px;">
-                                    <button type="button" onclick="habilitarEdicaoIngrediente(${ing.id}, '${ing.nome.replace("'", "\\'")}')" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Editar">✏️</button>
-                                    <button type="button" onclick="deletarIngredienteGlobal(${ing.id})" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Excluir">❌</button>
+                        if (ing.isAtivo) {
+                            // Ingrediente Ativo - Renderiza normal
+                            container.innerHTML += `
+                                <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <label style="display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; flex: 1;">
+                                        <input type="checkbox" class="ing-checkbox" value="${ing.id}" ${isChecked} onchange="atualizarChecados(this)">
+                                        <span id="ing-nome-${ing.id}" style="color: white; font-size: 0.9rem;">${ing.nome}</span>
+                                    </label>
+                                    <div id="ing-acoes-${ing.id}" style="display: flex; gap: 8px;">
+                                        <button type="button" onclick="habilitarEdicaoIngrediente(${ing.id}, '${ing.nome.replace("'", "\\'")}')" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Editar">✏️</button>
+                                        <button type="button" onclick="alternarStatusIngrediente(${ing.id}, false)" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Desativar">❌</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        } else {
+                            // Ingrediente Inativo - Soft Delete visual
+                            container.innerHTML += `
+                                <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0.5;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin: 0; flex: 1;">
+                                        <span style="display: inline-block; width: 13px; height: 13px; border: 1px solid #ef4444; border-radius: 3px; background: rgba(239,68,68,0.2);"></span>
+                                        <span id="ing-nome-${ing.id}" style="color: #ef4444; font-size: 0.9rem; text-decoration: line-through;">${ing.nome} (Desativado)</span>
+                                    </div>
+                                    <div id="ing-acoes-${ing.id}" style="display: flex; gap: 8px;">
+                                        <button type="button" onclick="alternarStatusIngrediente(${ing.id}, true)" class="btn-outline-gold" style="padding: 2px 8px; font-size: 0.7rem;">Ativar</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     });
                 });
         }
@@ -763,12 +781,17 @@
             });
         }
 
-        function deletarIngredienteGlobal(id) {
-            if(confirm("Tem certeza que deseja apagar este ingrediente do sistema? Ele sumirá de todos os pratos.")) {
-                fetch(`/Admin/RemoverIngrediente/${id}`, { method: 'POST' })
+        // Lógica de Ativar/Desativar ingrediente para o Admin
+        function alternarStatusIngrediente(id, ativando) {
+            const acao = ativando ? "ativar" : "desativar";
+            if(confirm(`Deseja ${acao} este ingrediente?`)) {
+                fetch(`/Admin/AlternarStatusIngrediente/${id}`, { method: 'POST' })
                     .then(response => {
                         if(response.ok) {
-                            ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
+                            if (!ativando) {
+                                // Remove da lista de selecionados se for desativado
+                                ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
+                            }
                             carregarIngredientesNoSelect(ingredientesChecadosGlobal);
                         }
                     });
@@ -792,25 +815,19 @@
             });
         }
 
-        // ========================================================
-        // 4. GERENCIAMENTO ADMINISTRATIVO (PRATOS) - CORRIGIDO
-        // ========================================================
         function confirmarTrocaStatusPrato(id, acao) {
             perguntar(`Deseja realmente ${acao} este prato do cardápio?`, function() {
                 
-                // MUDANÇA 1: Passamos o ID com "?id=" para forçar o C# a encontrar o prato independentemente da rota
                 fetch(`/Admin/AlternarStatusPrato?id=${id}`, { method: 'POST' })
                     .then(async res => {
                         if (res.ok) {
                             const data = await res.json();
                             alert(data.mensagem);
                             
-                            // MUDANÇA 2: Atualizamos apenas a lista mantendo o seu filtro atual
                             const filtroAtual = window.ultimoFiltroAplicado || 'ativos';
                             carregarAbaPratosFiltro(filtroAtual);
                             
                         } else {
-                            // MUDANÇA 3: Se o C# recusar (ex: ID não encontrado), agora ele vai te avisar
                             const txt = await res.text();
                             alert("Não foi possível alterar o status: " + txt);
                         }
@@ -826,18 +843,33 @@
             const container = $("#perfilContent");
             container.html('<p style="color: white; text-align:center; padding: 20px;">Atualizando lista...</p>');
             
-            // Forçamos o GET passando o parâmetro na URL para evitar o erro 405
             container.load(`/Admin/ObterItensCardapio?filtro=${valorFiltro}`, function(res, status, xhr) {
                 if (status === "error") alert("Erro ao filtrar: " + xhr.status);
             });
         }
 
-        function abrirModalItemCardapio(id = null, nome = '', desc = '', preco = '', periodo = '0', ingredientesSelecionados = '[]') {
+        // ========================================================
+        // ABRIR E SALVAR O MODAL DO PRATO (ATUALIZADO PARA IMAGENS)
+        // ========================================================
+        function abrirModalItemCardapio(id = null, nome = '', desc = '', preco = '', periodo = '0', imagemUrl = '', ingredientesSelecionados = '[]') {
             document.getElementById('itemId').value = id || '';
             document.getElementById('itemNome').value = nome;
             document.getElementById('itemDescricao').value = desc;
             document.getElementById('itemPreco').value = preco;
             document.getElementById('itemPeriodo').value = periodo;
+            
+            // NOVO: Tratamento da Imagem
+            document.getElementById('itemImagemUrlAntiga').value = imagemUrl; // Salva a foto atual
+            const inputFile = document.getElementById('itemImagemArquivo');
+            if (inputFile) inputFile.value = ''; // O navegador força isso a ser vazio
+            
+            // NOVO: Mostra o aviso para o Admin se já tiver uma foto salva
+            const textoImg = document.getElementById('textoImagemAtual');
+            if (id && imagemUrl && imagemUrl !== '/sem-foto.png') {
+                textoImg.innerHTML = `🖼️ Este prato já possui imagem. Só anexe um novo arquivo se quiser trocá-la.`;
+            } else {
+                textoImg.innerHTML = ``;
+            }
         
             const idsParseados = JSON.parse(ingredientesSelecionados);
             carregarIngredientesNoSelect(idsParseados);
@@ -850,22 +882,40 @@
             document.getElementById('itemCardapioModal').style.display = 'none';
         }
 
+        // Envia os dados usando FormData para suportar arquivo
         function salvarItemCardapio(e) {
             e.preventDefault();
 
-            const model = {
-                Id: document.getElementById('itemId').value ? parseInt(document.getElementById('itemId').value) : null,
-                Nome: document.getElementById('itemNome').value,
-                Descricao: document.getElementById('itemDescricao').value,
-                PrecoBase: parseFloat(document.getElementById('itemPreco').value),
-                Periodo: parseInt(document.getElementById('itemPeriodo').value),
-                IngredientesIds: ingredientesChecadosGlobal
-            };
+            // A MÁGICA DO UPLOAD: FormData permite empacotar arquivos e textos juntos
+            const formData = new FormData();
+            
+            const id = document.getElementById('itemId').value;
+            if(id) formData.append('Id', id);
+            
+            formData.append('Nome', document.getElementById('itemNome').value);
+            formData.append('Descricao', document.getElementById('itemDescricao').value);
+            
+            // Corrige vírgulas para o formato americano aceito no C# decimal
+            formData.append('PrecoBase', document.getElementById('itemPreco').value.replace(',', '.'));
+            formData.append('Periodo', document.getElementById('itemPeriodo').value);
+
+            // NOVO: Envia a URL antiga de volta. Assim o banco não apaga a foto se o usuário não enviar uma nova
+            formData.append('ImagemUrl', document.getElementById('itemImagemUrlAntiga').value);
+
+            // Anexa os ids dos ingredientes
+            ingredientesChecadosGlobal.forEach(ingId => {
+                formData.append('IngredientesIds', ingId);
+            });
+
+            // Anexa o arquivo de imagem, se houver
+            const fileInput = document.getElementById('itemImagemArquivo');
+            if (fileInput && fileInput.files.length > 0) {
+                formData.append('imagemArquivo', fileInput.files[0]);
+            }
 
             fetch('/Admin/SalvarItemCardapio', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(model)
+                body: formData // Não se coloca Content-Type com FormData, o navegador faz isso
             }).then(async (response) => {
                 if (response.ok) {
                     fecharModalItemCardapio();

@@ -14,20 +14,18 @@ namespace restaurante.ViewModels
         public string Descricao { get; set; }
 
         [Required(ErrorMessage = "O preço é obrigatório.")]
+        [Range(0.01, 999.99, ErrorMessage = "O preço deve ser maior que zero.")]
         public decimal PrecoBase { get; set; }
 
         [Required(ErrorMessage = "O período (Almoço/Jantar) é obrigatório.")]
         public int Periodo { get; set; }
 
-        /// <summary>
-        /// Define se o prato está visível para os clientes no cardápio.
-        /// Necessário para a lógica de Ativar/Desativar do painel administrativo.
-        /// </summary>
         public bool IsAtivo { get; set; }
 
-        /// <summary>
-        /// Lista de IDs dos ingredientes associados ao prato para preenchimento do formulário.
-        /// </summary>
+        // Adicionada obrigatoriedade para a Imagem
+        [Url(ErrorMessage = "Insira uma URL válida para a imagem.")]
+        public string ImagemUrl { get; set; }
+
         public List<int> IngredientesIds { get; set; } = new List<int>();
     }
 }

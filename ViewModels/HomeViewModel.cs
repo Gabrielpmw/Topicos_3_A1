@@ -10,6 +10,7 @@
         public bool IsSugestao { get; set; }
         public string Ingredientes { get; set; }
         public int Periodo { get; set; } // 0 = Almoço, 1 = Jantar
+        public string ImagemUrl { get; set; }
     }
 
     public class HomeViewModel
