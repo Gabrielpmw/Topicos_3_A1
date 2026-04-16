@@ -429,9 +429,30 @@
 
 <script>
     function showVisualCardapio(aba) {
-        document.getElementById('visual-almoco').style.display = aba === 'almoco' ? 'block' : 'none';
-        document.getElementById('visual-jantar').style.display = aba === 'jantar' ? 'block' : 'none';
-    }
+    // 1. Alterna a visibilidade das listas de pratos
+    document.getElementById('visual-almoco').style.display = aba === 'almoco' ? 'block' : 'none';
+    document.getElementById('visual-jantar').style.display = aba === 'jantar' ? 'block' : 'none';
+
+    // 2. Localiza os botões de filtro (Almoço / Jantar) do cardápio
+    const botoes = document.querySelectorAll('#cardapio .tab-btn');
+
+    botoes.forEach(btn => {
+        // Verifica o texto do botão para saber qual é qual
+        const isBotaoAlmoco = btn.innerText.toLowerCase().includes('almoço');
+        const isBotaoJantar = btn.innerText.toLowerCase().includes('jantar');
+
+        if ((aba === 'almoco' && isBotaoAlmoco) || (aba === 'jantar' && isBotaoJantar)) {
+            // Estilo de botão Ativo (Fundo Dourado, Texto Escuro)
+            btn.style.background = 'var(--gold)';
+            btn.style.color = '#1e293b';
+        } else {
+            // Estilo de botão Inativo (Fundo Transparente, Texto Branco)
+            btn.style.background = 'transparent';
+            btn.style.color = 'white';
+            btn.classList.remove('active');
+        }
+    });
+}
 
     function showCheckoutTab(aba) {
         document.getElementById('check-almoco').style.display = aba === 'almoco' ? 'grid' : 'none';

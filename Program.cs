@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using restaurante.Data;
 using restaurante.Models;
+using System;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +30,7 @@ builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options => {
 
 var app = builder.Build();
 
-// 3. RESET DO BANCO E CRIAÇÃO DE ROLES/ADM/CARDÁPIO
+// 3. RESET DO BANCO E CRIAÇÃO DE ROLES/ADM/CLIENTES/CARDÁPIO
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -52,7 +54,7 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        // CRIAÇÃO DO ADM PADRÃO
+        // 1. CRIAÇÃO DO ADM PADRÃO (ID 1)
         var adminUser = new Usuario
         {
             UserName = "admin",
@@ -74,6 +76,46 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
+        // 2. CRIAÇÃO DO PEDRO (ID 2)
+        var pedroUser = new Usuario
+        {
+            UserName = "pedro",
+            Email = "pedro@gmail.com",
+            PhoneNumber = "63988887777",
+            Nome = "Pedro",
+            Sobrenome = "Vieira Araujo",
+            CPF = "11122233344",
+            IsAtivo = true
+        };
+        if (await userManager.FindByNameAsync("pedro") == null)
+        {
+            var createPedro = await userManager.CreateAsync(pedroUser, "Pedro@123");
+            if (createPedro.Succeeded)
+            {
+                await userManager.AddToRoleAsync(pedroUser, "Comum");
+            }
+        }
+
+        // 3. CRIAÇÃO DO LUCAS (ID 3)
+        var lucasUser = new Usuario
+        {
+            UserName = "lucas",
+            Email = "lucas@gmail.com",
+            PhoneNumber = "63955554444",
+            Nome = "Lucas",
+            Sobrenome = "Vieira Ribeiro",
+            CPF = "55566677788",
+            IsAtivo = true
+        };
+        if (await userManager.FindByNameAsync("lucas") == null)
+        {
+            var createLucas = await userManager.CreateAsync(lucasUser, "Lucas@123");
+            if (createLucas.Succeeded)
+            {
+                await userManager.AddToRoleAsync(lucasUser, "Comum");
+            }
+        }
+
         // ====================================================
         // EXECUÇÃO DO ARQUIVO IMPORT.SQL
         // ====================================================
@@ -83,7 +125,7 @@ using (var scope = app.Services.CreateScope())
             var sql = File.ReadAllText(scriptPath);
             // Executa o SQL bruto do seu arquivo
             context.Database.ExecuteSqlRaw(sql);
-            Console.WriteLine(">>> SUCESSO: import.sql executado e cardápio populado! <<<");
+            Console.WriteLine(">>> SUCESSO: import.sql executado e banco populado! <<<");
         }
         else
         {
@@ -91,7 +133,7 @@ using (var scope = app.Services.CreateScope())
         }
         // ====================================================
 
-        Console.WriteLine(">>> SUCESSO: Banco recriado com Roles, ADM e Cardápio! <<<");
+        Console.WriteLine(">>> SUCESSO: Banco recriado com Roles, Usuários Iniciais e Cardápio! <<<");
     }
     catch (Exception ex)
     {
