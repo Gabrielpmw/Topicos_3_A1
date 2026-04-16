@@ -6,6 +6,14 @@
     <title>@ViewData["Title"] - Sabor & Arte</title>
     
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <style>
+        /* Animação para o Alerta Personalizado */
+        @@keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
 </head>
 <body>
 
@@ -54,6 +62,17 @@
         </div>
     </footer>
 
+    <div id="customAlertModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #1e293b; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid var(--gold); padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: popIn 0.3s ease-out;">
+            <div id="customAlertIcon" style="width: 60px; height: 60px; border-radius: 50%; background: rgba(212, 175, 55, 0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <span style="font-size: 30px;">⚠️</span>
+            </div>
+            <h3 id="customAlertTitle" style="color: var(--gold); margin-bottom: 15px; font-size: 1.5rem;">Aviso</h3>
+            <p id="customAlertMensagem" style="color: white; font-size: 1.05rem; margin-bottom: 25px; line-height: 1.5;"></p>
+            <button onclick="fecharAlertaPersonalizado()" class="btn-gold" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Entendi</button>
+        </div>
+    </div>
+
     <div id="modalLogin" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 1001; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
         <div class="modal-content-panel">
             <button onclick="fecharModalLogin()" class="modal-close-btn">&times;</button>
@@ -63,10 +82,12 @@
                     <label>Nome de Usuário</label>
                     <input name="NomeUsuario" type="text" class="form-input" required placeholder="Digite seu usuário">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 5px;">
                     <label>Senha</label>
                     <input name="Senha" type="password" class="form-input" required placeholder="Digite sua senha">
                 </div>
+                <a href="#" onclick="abrirModalRecuperacao()" style="color: var(--gold); font-size: 0.85rem; display: block; text-align: right; margin-bottom: 20px; text-decoration: none;">Esqueceu a senha?</a>
+                
                 <button type="submit" class="btn-finalizar">Entrar</button>
             </form>
         </div>
@@ -76,34 +97,109 @@
         <div class="modal-content-panel">
             <button onclick="fecharModal()" class="modal-close-btn">&times;</button>
             <h2 class="modal-title">Criar Conta</h2>
-            <form asp-controller="Conta" asp-action="Cadastrar" method="post">
+            
+            <form id="formCadastro" autocomplete="off" onsubmit="enviarCadastroAjax(event)">
+                <input type="text" style="display:none">
+                <input type="password" style="display:none">
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nome</label>
-                        <input name="Nome" type="text" class="form-input" required>
+                        <input name="Nome" type="text" class="form-input" autocomplete="new-password" required>
                     </div>
                     <div class="form-group">
                         <label>Sobrenome</label>
-                        <input name="Sobrenome" type="text" class="form-input" required>
+                        <input name="Sobrenome" type="text" class="form-input" autocomplete="new-password" required>
                     </div>
                 </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input name="Email" type="email" class="form-input" placeholder="exemplo@email.com" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone (Só números)</label>
+                        <input name="Telefone" type="text" class="form-input" placeholder="Ex: 63999999999" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" autocomplete="new-password" required>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Nome de Usuário</label>
-                    <input name="NomeUsuario" type="text" class="form-input" required>
+                    <input name="NomeUsuario" type="text" class="form-input" autocomplete="new-password" required>
                 </div>
                 <div class="form-group">
-                    <label>CPF</label>
-                    <input name="CPF" type="text" class="form-input" required>
+                    <label>CPF (Só números)</label>
+                    <input name="CPF" type="text" class="form-input" placeholder="Ex: 12345678901" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" autocomplete="new-password" required>
                 </div>
                 <div class="form-group">
                     <label>Senha</label>
-                    <input name="Senha" type="password" class="form-input" required>
+                    <input name="Senha" type="password" class="form-input" autocomplete="new-password" required>
+                    <small style="color: var(--text-gray); font-size: 0.75rem; display: block; margin-top: 5px;">A senha deve ter no mínimo 6 caracteres, 1 maiúscula, 1 minúscula e 1 número.</small>
                 </div>
                 <div class="form-group">
                     <label>Confirmar Senha</label>
-                    <input name="ConfirmarSenha" type="password" class="form-input" required>
+                    <input name="ConfirmarSenha" type="password" class="form-input" autocomplete="new-password" required>
                 </div>
                 <button type="submit" class="btn-finalizar">Finalizar Cadastro</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalRecuperarSenha" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 1002; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+        <div class="modal-content-panel" style="max-height: 90vh; overflow-y: auto;">
+            <button onclick="fecharModalRecuperacao()" class="modal-close-btn">&times;</button>
+            <h2 class="modal-title">Recuperar Conta</h2>
+            <p style="color: var(--text-gray); font-size: 0.9rem; text-align: center; margin-bottom: 20px;">
+                Preencha seus dados corretamente para provar sua identidade e cadastrar uma nova senha.
+            </p>
+            
+            <form id="formRecuperacao" autocomplete="off" onsubmit="enviarRecuperacaoAjax(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome Registrado</label>
+                        <input name="Nome" type="text" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sobrenome Registrado</label>
+                        <input name="Sobrenome" type="text" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>E-mail Registrado</label>
+                        <input name="Email" type="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone (Só números)</label>
+                        <input name="Telefone" type="text" class="form-input" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>CPF (Só números)</label>
+                    <input name="CPF" type="text" class="form-input" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                </div>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;" />
+                
+                <div class="form-group">
+                    <label>Novo Nome de Usuário <span style="color: var(--text-gray); font-size: 0.8rem;">(Deixe em branco para não alterar)</span></label>
+                    <input name="NovoNomeUsuario" type="text" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input name="NovaSenha" type="password" class="form-input" required>
+                    <small style="color: var(--text-gray); font-size: 0.75rem; display: block; margin-top: 5px;">A senha deve ter no mínimo 6 caracteres, 1 maiúscula, 1 minúscula e 1 número.</small>
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Nova Senha</label>
+                    <input name="ConfirmarNovaSenha" type="password" class="form-input" required>
+                </div>
+
+                <button type="submit" class="btn-finalizar">Redefinir e Logar</button>
             </form>
         </div>
     </div>
@@ -226,23 +322,170 @@
         </div>
     </div>
 
-    @if (TempData["MensagemErroSistema"] != null)
-    {
-        <script>
-                window.onload = function () {
-                    alert('@Html.Raw(TempData["MensagemErroSistema"])');
-                };
-        </script>
-    }
-
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
-            // --- MODAIS DE AUTENTICAÇÃO ---
-            function abrirModal() { document.getElementById('modalCadastro').style.display = 'flex'; }
+            // ========================================================
+            // TRUQUE DO ALERTA PERSONALIZADO
+            // ========================================================
+            window.alert = function(mensagem) {
+                document.getElementById('customAlertMensagem').innerText = mensagem;
+                
+                if(mensagem.toLowerCase().includes("sucesso")) {
+                    document.getElementById('customAlertTitle').innerText = "Tudo Certo!";
+                    document.getElementById('customAlertIcon').innerHTML = "✔️";
+                    document.getElementById('customAlertIcon').style.background = "rgba(34, 197, 94, 0.2)";
+                    document.getElementById('customAlertTitle').style.color = "#22c55e";
+                } else {
+                    document.getElementById('customAlertTitle').innerText = "Atenção";
+                    document.getElementById('customAlertIcon').innerHTML = "⚠️";
+                    document.getElementById('customAlertIcon').style.background = "rgba(212, 175, 55, 0.2)";
+                    document.getElementById('customAlertTitle').style.color = "var(--gold)";
+                }
+                
+                document.getElementById('customAlertModal').style.display = 'flex';
+            };
+
+            function fecharAlertaPersonalizado() {
+                document.getElementById('customAlertModal').style.display = 'none';
+            }
+
+            // ========================================================
+            // NOVA LÓGICA DE VALIDAÇÃO DE SENHA NO FRONTEND
+            // ========================================================
+            function validarForcaDaSenha(senha) {
+                const regexMaiuscula = /[A-Z]/;
+                const regexMinuscula = /[a-z]/;
+                const regexNumero = /[0-9]/;
+                
+                if (senha.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
+                if (!regexMaiuscula.test(senha)) return "A senha deve conter pelo menos uma letra maiúscula.";
+                if (!regexMinuscula.test(senha)) return "A senha deve conter pelo menos uma letra minúscula.";
+                if (!regexNumero.test(senha)) return "A senha deve conter pelo menos um número.";
+                
+                return null; 
+            }
+
+            // ========================================================
+            // LÓGICA DE CADASTRO VIA AJAX 
+            // ========================================================
+            function enviarCadastroAjax(event) {
+                event.preventDefault(); 
+
+                const form = document.getElementById('formCadastro');
+                const senha = form.querySelector('[name="Senha"]').value;
+                const confirmar = form.querySelector('[name="ConfirmarSenha"]').value;
+
+                if (senha !== confirmar) {
+                    alert("As senhas que você digitou não coincidem! Por favor, verifique e digite novamente.");
+                    return;
+                }
+
+                // VALIDAÇÃO DA SENHA AQUI
+                const erroSenha = validarForcaDaSenha(senha);
+                if (erroSenha) {
+                    alert(erroSenha);
+                    return;
+                }
+
+                const payload = {
+                    Nome: form.querySelector('[name="Nome"]').value,
+                    Sobrenome: form.querySelector('[name="Sobrenome"]').value,
+                    Email: form.querySelector('[name="Email"]').value,
+                    Telefone: form.querySelector('[name="Telefone"]').value,
+                    NomeUsuario: form.querySelector('[name="NomeUsuario"]').value,
+                    CPF: form.querySelector('[name="CPF"]').value,
+                    Senha: senha,
+                    ConfirmarSenha: confirmar
+                };
+
+                fetch('/Conta/Cadastrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(async res => {
+                    if (res.ok) {
+                        fecharModal(); 
+                        window.location.reload(); 
+                    } else {
+                        const txt = await res.text();
+                        try {
+                            const obj = JSON.parse(txt);
+                            alert(obj.mensagem || "Verifique os dados informados e tente novamente.");
+                        } catch {
+                            alert(txt || "Falha na comunicação com o servidor ao processar o cadastro.");
+                        }
+                    }
+                }).catch(err => alert("Não foi possível conectar ao servidor. Verifique sua conexão."));
+            }
+
+            // ========================================================
+            // LÓGICA DE RECUPERAÇÃO DE SENHA VIA AJAX
+            // ========================================================
+            function enviarRecuperacaoAjax(event) {
+                event.preventDefault();
+
+                const form = document.getElementById('formRecuperacao');
+                const novaSenha = form.querySelector('[name="NovaSenha"]').value;
+                const confirmarNova = form.querySelector('[name="ConfirmarNovaSenha"]').value;
+
+                if (novaSenha !== confirmarNova) {
+                    alert("As senhas que você digitou não coincidem!");
+                    return;
+                }
+
+                // VALIDAÇÃO DA NOVA SENHA AQUI
+                const erroSenha = validarForcaDaSenha(novaSenha);
+                if (erroSenha) {
+                    alert(erroSenha);
+                    return;
+                }
+
+                const payload = {
+                    Nome: form.querySelector('[name="Nome"]').value,
+                    Sobrenome: form.querySelector('[name="Sobrenome"]').value,
+                    Email: form.querySelector('[name="Email"]').value,
+                    Telefone: form.querySelector('[name="Telefone"]').value,
+                    CPF: form.querySelector('[name="CPF"]').value,
+                    NovoNomeUsuario: form.querySelector('[name="NovoNomeUsuario"]').value,
+                    NovaSenha: novaSenha,
+                    ConfirmarNovaSenha: confirmarNova
+                };
+
+                fetch('/Conta/ResetarSenha', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(async res => {
+                    if (res.ok) {
+                        fecharModalRecuperacao();
+                        window.location.reload(); 
+                    } else {
+                        const txt = await res.text();
+                        try {
+                            const obj = JSON.parse(txt);
+                            alert(obj.mensagem || "Verifique os dados informados.");
+                        } catch {
+                            alert(txt || "Falha na comunicação com o servidor ao redefinir a senha.");
+                        }
+                    }
+                }).catch(err => alert("Não foi possível conectar ao servidor. Verifique sua conexão."));
+            }
+
+            // --- MODAIS GERAIS ---
+            function abrirModal() { 
+                fecharModalLogin();
+                document.getElementById('modalCadastro').style.display = 'flex'; 
+            }
             function fecharModal() { document.getElementById('modalCadastro').style.display = 'none'; }
 
             function abrirModalLogin() { document.getElementById('modalLogin').style.display = 'flex'; }
             function fecharModalLogin() { document.getElementById('modalLogin').style.display = 'none'; }
+
+            function abrirModalRecuperacao() {
+                fecharModalLogin();
+                document.getElementById('modalRecuperarSenha').style.display = 'flex';
+            }
+            function fecharModalRecuperacao() { document.getElementById('modalRecuperarSenha').style.display = 'none'; }
 
             // --- MODAL DE PERFIL E ABAS ---
             function abrirPerfil() {
@@ -289,7 +532,6 @@
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Admin/ObterUsuarios?mostrarInativos=false");
                 }
-                // --- NOVA ABA DE RELATÓRIOS ---
                 else if (aba === 'Relatorios' && document.getElementById('btnAbaRelatorios')) {
                     $("#btnAbaRelatorios").addClass("active");
                     $("#perfilContent").html('<div style="text-align: center; color: var(--gold); margin-top: 50px;">Carregando relatórios...</div>');
@@ -321,8 +563,8 @@
                     .then(async res => {
                         if (res.ok) {
                             const data = await res.json();
-                            alert(data.mensagem);
-                            carregarAba('Reservas');
+                            alert(data.mensagem); 
+                            carregarAba('Reservas'); 
                         } else {
                             alert(await res.text());
                         }
@@ -588,6 +830,7 @@
                 let modais = [
                     document.getElementById('modalCadastro'),
                     document.getElementById('modalLogin'),
+                    document.getElementById('modalRecuperarSenha'),
                     document.getElementById('perfilModal'),
                     document.getElementById('enderecoModal'),
                     document.getElementById('itemCardapioModal')
@@ -595,6 +838,15 @@
                 modais.forEach(m => { if (event.target == m && m != null) m.style.display = 'none'; });
             }
     </script>
+    
+    @if (TempData["MensagemErroSistema"] != null)
+    {
+        <script>
+            window.addEventListener('load', function () {
+                alert('@Html.Raw(TempData["MensagemErroSistema"])');
+            });
+        </script>
+    }
     
     @await RenderSectionAsync("Scripts", required: false)
 </body>

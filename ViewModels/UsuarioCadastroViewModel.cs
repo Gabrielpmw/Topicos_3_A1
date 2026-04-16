@@ -11,20 +11,24 @@ namespace restaurante.ViewModels
         public string Sobrenome { get; set; }
 
         [Required(ErrorMessage = "O Nome de Usuário é obrigatório.")]
-        [Display(Name = "Nome de Usuário")]
         public string NomeUsuario { get; set; }
 
         [Required(ErrorMessage = "O CPF é obrigatório.")]
+        [StringLength(11, MinimumLength = 11, ErrorMessage = "O CPF deve conter exatamente 11 números.")]
         public string CPF { get; set; }
 
+        [Required(ErrorMessage = "O E-mail é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Formato de e-mail inválido.")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "O Telefone é obrigatório.")]
+        [StringLength(11, MinimumLength = 10, ErrorMessage = "O Telefone deve conter 10 ou 11 números.")]
+        public string Telefone { get; set; }
+
         [Required(ErrorMessage = "A Senha é obrigatória.")]
-        [DataType(DataType.Password)]
         public string Senha { get; set; }
 
         [Required(ErrorMessage = "A Confirmação de Senha é obrigatória.")]
-        [DataType(DataType.Password)]
-        [Display(Name = "Confirmar Senha")]
-        [Compare("Senha", ErrorMessage = "As senhas não coincidem.")]
         public string ConfirmarSenha { get; set; }
     }
 }

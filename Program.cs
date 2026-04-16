@@ -13,14 +13,18 @@ builder.Services.AddControllersWithViews();
 
 // 2. CONFIGURAÇÃO DO IDENTITY (Com suporte a Roles)
 builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options => {
+    // Como a validação de senha (Maiúscula, número, etc) agora é feita 
+    // em tempo real pelo JavaScript, desligamos as travas do C# para evitar erros.
     options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 6;
+    options.Password.RequiredLength = 1;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireLowercase = false;
+
+    options.SignIn.RequireConfirmedAccount = false;
 })
 .AddEntityFrameworkStores<RestauranteContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders(); // Importante para o "Esqueci a senha"
 
 var app = builder.Build();
 
@@ -53,6 +57,7 @@ using (var scope = app.Services.CreateScope())
         {
             UserName = "admin",
             Email = "admin@restaurante.com",
+            PhoneNumber = "00000000000", // Adicionado para evitar erro de campo vazio/único
             Nome = "Administrador",
             Sobrenome = "Sistema",
             CPF = "00000000000",
@@ -70,7 +75,7 @@ using (var scope = app.Services.CreateScope())
         }
 
         // ====================================================
-        // NOVO: EXECUÇÃO DO ARQUIVO IMPORT.SQL
+        // EXECUÇÃO DO ARQUIVO IMPORT.SQL
         // ====================================================
         var scriptPath = Path.Combine(AppContext.BaseDirectory, "import.sql");
         if (File.Exists(scriptPath))
@@ -103,6 +108,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();
