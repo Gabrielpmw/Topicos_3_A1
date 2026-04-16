@@ -49,7 +49,7 @@
                                  
                 podeCancelar = app.Status == StatusDelivery.EmProcesso;
             }
-            
+
             // 2. Renderização do HTML do Pedido
             <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 15px;">
                 
@@ -96,20 +96,3 @@
         }
     }
 </div>
-
-<script>
-    function cancelarPedido(id) {
-        if(confirm("Tem certeza que deseja cancelar este pedido?")) {
-            fetch('/Pedido/CancelarPedido/' + id, { method: 'POST' })
-            .then(async res => {
-                if(res.ok) {
-                    alert("Cancelado com sucesso!");
-                    // Atualiza a view na mesma hora chamando a função pai da tela de perfil
-                    carregarMeusPedidos();
-                } else {
-                    alert(await res.text());
-                }
-            });
-        }
-    }
-</script>

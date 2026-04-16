@@ -21,11 +21,13 @@ namespace restaurante.Controllers
         public async Task<IActionResult> Index()
         {
             var hoje = DateTime.Today;
+
+            // Pegamos a hora exata do servidor neste momento
             var horaAtual = DateTime.Now.TimeOfDay;
 
             // 1. Regras de negócio: Horários permitidos para pedidos
             // Almoço: 11h às 15h | Jantar: 18h às 23h
-            bool podeAlmoco = horaAtual >= new TimeSpan(11, 0, 0) && horaAtual <= new TimeSpan(15, 0, 0);
+            bool podeAlmoco = horaAtual >= new TimeSpan(8, 0, 0) && horaAtual <= new TimeSpan(15, 0, 0);
             bool podeJantar = horaAtual >= new TimeSpan(18, 0, 0) && horaAtual <= new TimeSpan(23, 0, 0);
 
             // 2. Busca no banco quais são os IDs das Sugestões do Chefe sorteadas para hoje
@@ -49,24 +51,26 @@ namespace restaurante.Controllers
                 PrecoBase = p.PrecoBase,
                 Periodo = (int)p.Periodo,
 
-                // MAPEAMENTO DA IMAGEM ADICIONADO AQUI:
+                // Trazendo a imagem
                 ImagemUrl = p.ImagemUrl,
 
-                // Pega os ingredientes ativos do prato e junta os nomes separados por vírgula
+                // Junta os ingredientes ativos separados por vírgula
                 Ingredientes = string.Join(", ", p.Ingredientes.Where(ing => ing.IsAtivo).Select(ing => ing.Nome)),
 
                 IsSugestao = sugestoesHoje.Contains(p.Id),
 
-                // Regra de Ouro: Se for a sugestão do dia, calcula o preço final com 20% de desconto
+                // Regra do Desconto de 20%
                 PrecoFinal = sugestoesHoje.Contains(p.Id) ? p.PrecoBase * 0.80m : p.PrecoBase
             }).ToList();
 
-            // 5. Separa as listas para enviar para a tela de forma organizada
+            // 5. Separa as listas para enviar para a tela
             var model = new HomeViewModel
             {
                 Sugestoes = pratos.Where(p => p.IsSugestao).ToList(),
                 ItensAlmoco = pratos.Where(p => p.Periodo == 0).ToList(),
                 ItensJantar = pratos.Where(p => p.Periodo == 1).ToList(),
+
+                // Variáveis cruciais para bloquear os botões na tela
                 PodePedirAlmoco = podeAlmoco,
                 PodePedirJantar = podeJantar
             };

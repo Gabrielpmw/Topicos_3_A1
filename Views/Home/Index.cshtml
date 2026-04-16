@@ -109,7 +109,12 @@
                         
                         <div style="padding: 25px; flex: 1; display: flex; flex-direction: column; justify-content: flex-end;">
                             <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 20px;">Ingredientes: @prato.Ingredientes</p>
-                            <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold;">Selecionar</a>
+                            
+                            @if(Model.PodePedirAlmoco) {
+                                <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold;">Adicionar ao Pedido</a>
+                            } else {
+                                <div style="background: #334155; color: #94a3b8; text-align: center; padding: 12px; border-radius: 6px; font-weight: bold; cursor: not-allowed;">Apenas de 11h às 15h</div>
+                            }
                         </div>
                     </div>
                 }
@@ -139,7 +144,12 @@
                         </div>
                         <div style="padding: 25px; flex: 1; display: flex; flex-direction: column; justify-content: flex-end;">
                             <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 20px;">Ingredientes: @prato.Ingredientes</p>
-                            <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold;">Selecionar</a>
+                            
+                            @if(Model.PodePedirJantar) {
+                                <a href="#pedidos" class="btn-gold" style="display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold;">Adicionar ao Pedido</a>
+                            } else {
+                                <div style="background: #334155; color: #94a3b8; text-align: center; padding: 12px; border-radius: 6px; font-weight: bold; cursor: not-allowed;">Apenas de 18h às 23h</div>
+                            }
                         </div>
                     </div>
                 }
@@ -187,8 +197,14 @@
 
             <h4 style="color: var(--gold); margin-bottom: 15px;">Selecionar Itens do Cardápio</h4>
             
-            <div id="alertaHorario" style="background: transparent; border: 1px solid #22c55e; color: #22c55e; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                Restaurante Aberto - Cardápio Completo Liberado!
+            <div id="alertaHorario" style="background: transparent; border: 1px solid @((Model.PodePedirAlmoco || Model.PodePedirJantar) ? "#22c55e" : "#ef4444"); color: @((Model.PodePedirAlmoco || Model.PodePedirJantar) ? "#22c55e" : "#ef4444"); padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold;">
+                @if (Model.PodePedirAlmoco) {
+                    <text>✅ Restaurante Aberto - Cardápio de Almoço Liberado!</text>
+                } else if (Model.PodePedirJantar) {
+                    <text>✅ Restaurante Aberto - Cardápio de Jantar Liberado!</text>
+                } else {
+                    <text>❌ Restaurante Fechado para pedidos no momento. (Almoço: 11h-15h | Jantar: 18h-23h)</text>
+                }
             </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -211,11 +227,18 @@
                                 <span style="color: #22c55e; font-size: 1.2rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 15px; background: #0f172a; padding: 8px 15px; border-radius: 8px; width: fit-content;">
-                            <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, -1)">-</button>
-                            <span class="qtd-display" id="qtd-@prato.Id">0</span>
-                            <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, 1)">+</button>
-                        </div>
+                        
+                        @if (Model.PodePedirAlmoco) {
+                            <div style="display: flex; align-items: center; gap: 15px; background: #0f172a; padding: 8px 15px; border-radius: 8px; width: fit-content;">
+                                <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, -1)">-</button>
+                                <span class="qtd-display" id="qtd-@prato.Id">0</span>
+                                <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, 1)">+</button>
+                            </div>
+                        } else {
+                            <div style="background: #334155; color: #94a3b8; padding: 8px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; display: inline-block;">
+                                Fechado agora (11h às 15h)
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -235,11 +258,18 @@
                                 <span style="color: #22c55e; font-size: 1.2rem; font-weight: bold;">R$ @prato.PrecoFinal.ToString("F2")</span>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 15px; background: #0f172a; padding: 8px 15px; border-radius: 8px; width: fit-content;">
-                            <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, -1)">-</button>
-                            <span class="qtd-display" id="qtd-@prato.Id">0</span>
-                            <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, 1)">+</button>
-                        </div>
+                        
+                        @if (Model.PodePedirJantar) {
+                            <div style="display: flex; align-items: center; gap: 15px; background: #0f172a; padding: 8px 15px; border-radius: 8px; width: fit-content;">
+                                <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, -1)">-</button>
+                                <span class="qtd-display" id="qtd-@prato.Id">0</span>
+                                <button class="qtd-btn" onclick="alterarQtd(@prato.Id, '@prato.Nome.Replace("'", "\\'")', @pBase, @isSug, 1)">+</button>
+                            </div>
+                        } else {
+                            <div style="background: #334155; color: #94a3b8; padding: 8px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; display: inline-block;">
+                                Fechado agora (18h às 23h)
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -270,6 +300,10 @@
             @if (!User.Identity.IsAuthenticated)
             {
                 <button disabled style="width: 100%; margin-top: 25px; padding: 15px; background: #334155; color: #94a3b8; border: none; border-radius: 8px; font-weight: bold;">Faça Login para Pedir</button>
+            }
+            else if (!Model.PodePedirAlmoco && !Model.PodePedirJantar)
+            {
+                <button disabled style="width: 100%; margin-top: 25px; padding: 15px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: bold; opacity: 0.8;">Restaurante Fechado</button>
             }
             else
             {
