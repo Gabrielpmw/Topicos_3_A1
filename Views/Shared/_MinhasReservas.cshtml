@@ -1,0 +1,60 @@
+﻿@model IEnumerable<restaurante.Models.Reserva>
+
+<div class="pedidos-lista">
+    <h3 style="color: var(--gold); margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Minhas Reservas
+    </h3>
+
+    @if (!Model.Any())
+    {
+        <p style="color: var(--text-gray); text-align: center; padding: 30px;">Você ainda não possui reservas de mesa.</p>
+    }
+    else
+    {
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            @foreach (var reserva in Model)
+            {
+                <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px;">
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div>
+                            <strong style="color: white; display: block; font-size: 1.2rem;">Mesa @reserva.Mesa.Numero</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-gray);">
+                                Capacidade: até @reserva.Mesa.CapacidadePessoas pessoas
+                            </span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: var(--text-gray); display: block; font-size: 0.9rem;">CÓDIGO DE CONFIRMAÇÃO</span>
+                            <strong style="color: var(--gold); font-size: 1.3rem; letter-spacing: 2px;">#@reserva.CodigoConfirmacao</strong>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                        
+                        <span style="color: white; font-size: 1.1rem;">
+                            📅 @reserva.DataHoraReserva.ToString("dd/MM/yyyy") às <strong style="color: #22c55e;">@reserva.DataHoraReserva.ToString("HH:mm")</strong>
+                        </span>
+
+                        @if (reserva.DataHoraReserva > DateTime.Now)
+                        {
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span style="background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid #22c55e; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
+                                    Confirmada
+                                </span>
+                                <button onclick="cancelarReserva(@reserva.Id, '@reserva.DataHoraReserva.ToString("yyyy-MM-ddTHH:mm:ss")')" class="btn-outline-gold" style="border-color: #ef4444; color: #ef4444; padding: 4px 12px; font-size: 0.85rem;">
+                                    Cancelar
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <span style="background: rgba(255, 255, 255, 0.05); color: var(--text-gray); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
+                                Concluída
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

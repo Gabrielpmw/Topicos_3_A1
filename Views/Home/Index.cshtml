@@ -329,10 +329,73 @@
     </div>
 </div>
 
-<section class="reservas" id="reservas" style="padding: 100px 0; background-color: #0b1120; min-height: 400px;">
+<section class="reservas" id="reservas" style="padding: 100px 0; background-color: #0b1120;">
     <div class="container">
-        <h2 style="color: var(--gold); text-align: center; font-size: 2.5rem; margin-bottom: 20px;">Reservar Mesa</h2>
-        <p style="color: var(--text-gray); text-align: center; font-size: 1.1rem;">(A planta baixa do restaurante será exibida aqui)</p>
+        <h2 style="color: var(--gold); text-align: center; font-size: 2.5rem; margin-bottom: 50px;">Reserva de Mesas</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 400px; gap: 40px; align-items: start;">
+            
+            <div style="background: #e2e0d3; padding: 20px; border-radius: 12px; border: 2px solid var(--gold);">
+                <img src="~/img/MapaMesas.png" alt="Mapa do Restaurante" style="width: 100%; border-radius: 8px;">
+            </div>
+
+            <div style="background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155;">
+                
+                @if (!User.Identity.IsAuthenticated)
+                {
+                    <div style="text-align: center; padding: 40px 0;">
+                        <p style="color: var(--text-gray); margin-bottom: 20px;">Você precisa estar logado para fazer uma reserva.</p>
+                        <button onclick="abrirModalLogin()" class="btn-gold" style="padding: 10px 20px; border-radius: 8px; border: none;">Fazer Login</button>
+                    </div>
+                }
+                else
+                {
+                    <form id="formReserva" onsubmit="confirmarReserva(event)">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="color: white; margin-bottom: 8px; display: block;">Data</label>
+                            <input type="date" id="reservaData" class="form-input" style="width: 100%; padding: 12px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #334155;" required onchange="buscarMesas()">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="color: white; margin-bottom: 8px; display: block;">Horário (Em ponto)</label>
+                            <select id="reservaHora" class="form-input" style="width: 100%; padding: 12px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #334155;" required onchange="buscarMesas()">
+                                <option value="">Selecione a hora...</option>
+                                <optgroup label="Almoço">
+                                    <option value="11">11:00</option>
+                                    <option value="12">12:00</option>
+                                    <option value="13">13:00</option>
+                                    <option value="14">14:00</option>
+                                    <option value="15">15:00</option>
+                                </optgroup>
+                                <optgroup label="Jantar">
+                                    <option value="18">18:00</option>
+                                    <option value="19">19:00</option>
+                                    <option value="20">20:00</option>
+                                    <option value="21">21:00</option>
+                                    <option value="22">22:00</option>
+                                    <option value="23">23:00</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div style="background: rgba(212, 175, 55, 0.1); border-left: 4px solid var(--gold); padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+                            <p style="color: #cbd5e1; font-size: 0.85rem; margin: 0; line-height: 1.5;">
+                                ⚠️ Com o horário marcado, você terá o tempo de <strong>2 horas</strong> de permanência. Cancelamentos com menos de 6 horas de antecedência geram multa de R$ 50,00.
+                            </p>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 30px;">
+                            <label style="color: white; margin-bottom: 8px; display: block;">Mesas Disponíveis</label>
+                            <select id="reservaMesa" class="form-input" style="width: 100%; padding: 12px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #334155;" required disabled>
+                                <option value="">Escolha a data e a hora primeiro</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" id="btnReservar" class="btn-gold" style="width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" disabled>Confirmar Reserva</button>
+                    </form>
+                }
+            </div>
+        </div>
     </div>
 </section>
 
@@ -543,8 +606,95 @@
         });
     }
 
+    // -----------------------------------------------------
+    // LÓGICA DE RESERVAS DE MESA
+    // -----------------------------------------------------
+
+    function configurarDataMinimaReserva() {
+        const dataInput = document.getElementById('reservaData');
+        if(dataInput) {
+            // Define o mínimo para hoje (ou você pode somar +1 para ser apenas amanhã)
+            const hoje = new Date().toISOString().split('T')[0];
+            dataInput.setAttribute('min', hoje);
+        }
+    }
+
+    function buscarMesas() {
+        const data = document.getElementById('reservaData').value;
+        const hora = document.getElementById('reservaHora').value;
+        const selectMesa = document.getElementById('reservaMesa');
+        const btnReservar = document.getElementById('btnReservar');
+
+        if (!data || !hora) {
+            selectMesa.innerHTML = '<option value="">Escolha a data e a hora primeiro</option>';
+            selectMesa.disabled = true;
+            btnReservar.disabled = true;
+            return;
+        }
+
+        selectMesa.innerHTML = '<option value="">Buscando mesas...</option>';
+        selectMesa.disabled = true;
+
+        // Formata a data para enviar para o Controller: YYYY-MM-DDTHH:00:00
+        const dataHoraStr = `${data}T${hora.padStart(2, '0')}:00:00`;
+
+        fetch(`/Reserva/ObterMesasDisponiveis?dataHora=${dataHoraStr}`)
+            .then(res => res.json())
+            .then(mesas => {
+                selectMesa.innerHTML = '';
+                
+                if (mesas.length === 0) {
+                    // TEXTO DE AVISO DE ERRO ATUALIZADO AQUI
+                    selectMesa.innerHTML = '<option value="">Nenhuma mesa livre. (Aguarde 2h de intervalo)</option>';
+                    btnReservar.disabled = true;
+                } else {
+                    selectMesa.innerHTML = '<option value="">Selecione uma mesa...</option>';
+                    mesas.forEach(m => {
+                        selectMesa.innerHTML += `<option value="${m.id}">Mesa ${m.numero} (Até ${m.capacidade} pessoas)</option>`;
+                    });
+                    selectMesa.disabled = false;
+                    btnReservar.disabled = false;
+                }
+            }).catch(() => {
+                selectMesa.innerHTML = '<option value="">Erro ao buscar mesas.</option>';
+            });
+    }
+
+    function confirmarReserva(e) {
+        e.preventDefault();
+        
+        const data = document.getElementById('reservaData').value;
+        const hora = document.getElementById('reservaHora').value;
+        const mesaId = document.getElementById('reservaMesa').value;
+        
+        const dataHoraStr = `${data}T${hora.padStart(2, '0')}:00:00`;
+
+        const payload = {
+            DataHora: dataHoraStr,
+            MesaId: parseInt(mesaId)
+        };
+
+        fetch('/Reserva/ConfirmarReserva', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(async res => {
+            if(res.ok) {
+                const data = await res.json();
+                alert(`${data.mensagem}\n\nGuarde seu código de confirmação: ${data.codigo}`);
+                
+                // Recarrega a busca para sumir com a mesa que acabou de ser reservada
+                buscarMesas();
+            } else { 
+                alert("Erro: " + await res.text()); 
+            }
+        });
+    }
+
+    // Inicialização da Página
     window.onload = function() {
         validarHorario();
         carregarEnderecos(); 
+        configurarDataMinimaReserva();
     };
 </script>

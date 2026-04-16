@@ -200,6 +200,7 @@
                     {
                         <button id="btnAbaEnderecos" onclick="carregarAba('Enderecos')" class="perfil-nav-btn">Endereços</button>
                         <button id="btnAbaPedidos" onclick="carregarAba('Pedidos')" class="perfil-nav-btn">Meus Pedidos</button>
+                        <button id="btnAbaReservas" onclick="carregarAba('Reservas')" class="perfil-nav-btn">Minhas Reservas</button>
                     }
 
                     <button id="btnAbaConfig" onclick="carregarAba('Config')" class="perfil-nav-btn">Configurações</button>
@@ -250,7 +251,6 @@
             }
             function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
 
-            // A MÁGICA ESTÁ AQUI: ADICIONAMOS A ABA DE PEDIDOS
             function carregarAba(aba) {
                 $(".perfil-nav-btn").removeClass("active");
             
@@ -264,11 +264,15 @@
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Conta/ObterEnderecos");
                 }
-                // ->> ESTE BLOCO ESTAVA FALTANDO! <<-
                 else if (aba === 'Pedidos' && document.getElementById('btnAbaPedidos')) {
                     $("#btnAbaPedidos").addClass("active");
                     $("#perfilContent").html('<p style="color: white;">Carregando seus pedidos...</p>');
                     $("#perfilContent").load("/Pedido/ObterMeusPedidos");
+                }
+                else if (aba === 'Reservas' && document.getElementById('btnAbaReservas')) {
+                    $("#btnAbaReservas").addClass("active");
+                    $("#perfilContent").html('<p style="color: white;">Carregando suas reservas...</p>');
+                    $("#perfilContent").load("/Reserva/ObterMinhasReservas");
                 }
                 else if (aba === 'Pratos' && document.getElementById('btnAbaPratos')) {
                     $("#btnAbaPratos").addClass("active");
@@ -290,10 +294,37 @@
                 }
             }
 
-            // Para fazer com que o botão "Cancelar Pedido" funcione corretamente,
-            // precisamos garantir que ele atualize a aba de pedidos sem recarregar a página inteira:
             window.carregarMeusPedidos = function() {
                 carregarAba('Pedidos');
+            }
+
+            // --- LÓGICA DE CANCELAMENTO DE RESERVAS ---
+            function cancelarReserva(id, dataReservaStr) {
+                const dataReserva = new Date(dataReservaStr);
+                const agora = new Date();
+                
+                // Calcula a diferença em horas
+                const horasDiferenca = (dataReserva - agora) / (1000 * 60 * 60);
+
+                let msgConfirmacao = "Tem certeza que deseja cancelar esta reserva?";
+                
+                // Se faltar menos de 6 horas, mostra o aviso da multa
+                if (horasDiferenca < 6) {
+                    msgConfirmacao = "ATENÇÃO: Faltam menos de 6 horas para a sua reserva!\n\nDe acordo com as nossas políticas, será cobrada uma multa de R$ 50,00 pelo cancelamento tardio.\n\nDeseja cancelar mesmo assim?";
+                }
+
+                if (confirm(msgConfirmacao)) {
+                    fetch('/Reserva/CancelarReserva/' + id, { method: 'POST' })
+                    .then(async res => {
+                        if (res.ok) {
+                            const data = await res.json();
+                            alert(data.mensagem);
+                            carregarAba('Reservas'); // Atualiza a aba na hora, a reserva vai sumir!
+                        } else {
+                            alert(await res.text());
+                        }
+                    });
+                }
             }
 
             // --- FUNÇÕES DE CONTA E PERFIL ---
