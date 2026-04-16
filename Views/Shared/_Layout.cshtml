@@ -68,8 +68,20 @@
                 <span style="font-size: 30px;">⚠️</span>
             </div>
             <h3 id="customAlertTitle" style="color: var(--gold); margin-bottom: 15px; font-size: 1.5rem;">Aviso</h3>
-            <p id="customAlertMensagem" style="color: white; font-size: 1.05rem; margin-bottom: 25px; line-height: 1.5;"></p>
+            <p id="customAlertMensagem" style="color: white; font-size: 1.05rem; margin-bottom: 25px; line-height: 1.5; white-space: pre-wrap;"></p>
             <button onclick="fecharAlertaPersonalizado()" class="btn-gold" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Entendi</button>
+        </div>
+    </div>
+
+    <div id="customConfirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 999999; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #1e293b; border-radius: 12px; width: 95%; max-width: 400px; border: 1px solid var(--gold); padding: 30px; text-align: center; animation: popIn 0.3s ease-out;">
+            <div style="font-size: 40px; margin-bottom: 15px;">❓</div>
+            <h3 style="color: var(--gold); margin-bottom: 15px;">Confirmar Ação</h3>
+            <p id="confirmMessage" style="color: white; margin-bottom: 25px; line-height: 1.5;"></p>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnConfirmSim" class="btn-gold" style="flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sim, confirmar</button>
+                <button onclick="fecharConfirmacao()" class="btn-outline-gold" style="flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.05);">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -205,30 +217,45 @@
     </div>
 
     <div id="enderecoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 1060; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
-        <div class="modal-content-panel" style="max-width: 450px;">
+        <div class="modal-content-panel" style="max-width: 500px;">
             <button onclick="fecharModalEndereco()" class="modal-close-btn">&times;</button>
             <h2 class="modal-title" id="tituloModalEnd">Novo Endereço</h2>
             
             <form id="formEnd" onsubmit="salvarEndereco(event)">
                 <input type="hidden" id="endId">
+                
                 <div class="form-group">
-                    <label>Logradouro (Rua/Alameda)</label>
-                    <input type="text" id="endLogradouro" class="form-input" required>
+                    <label>CEP <span style="color: var(--gold); font-size: 0.8rem;">(Digite para autocompletar)</span></label>
+                    <input type="text" id="endCep" class="form-input" placeholder="77000-000" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 8) buscarCepNaApi();" required>
                 </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Número</label>
-                        <input type="text" id="endNumero" class="form-input" required>
+                        <label>Quadra / ARSE / ARSO</label>
+                        <input type="text" id="endQuadra" class="form-input" placeholder="Ex: 104 Sul" required>
                     </div>
                     <div class="form-group">
-                        <label>Bairro</label>
-                        <input type="text" id="endBairro" class="form-input" required>
+                        <label>Alameda / QI</label>
+                        <input type="text" id="endAlameda" class="form-input" placeholder="Ex: Alameda 02" required>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>CEP</label>
-                    <input type="text" id="endCep" class="form-input" placeholder="00000-000" required>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Lote</label>
+                        <input type="text" id="endLote" class="form-input" placeholder="Ex: 14" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Complemento</label>
+                        <input type="text" id="endComplemento" class="form-input" placeholder="Apt, Bloco, Casa (Opcional)">
+                    </div>
                 </div>
+
+                <div class="form-group">
+                    <label>Ponto de Referência</label>
+                    <input type="text" id="endReferencia" class="form-input" placeholder="Perto de onde?" required>
+                </div>
+                
                 <button type="submit" class="btn-finalizar">Salvar Endereço</button>
             </form>
         </div>
@@ -289,7 +316,6 @@
                 <h2 style="color: var(--gold); margin-bottom: 40px; font-size: 1.5rem;">Meu Perfil</h2>
                 
                 <nav style="display: flex; flex-direction: column; gap: 10px;">
-                    
                     <button id="btnAbaDados" onclick="carregarAba('Dados')" class="perfil-nav-btn active">Meus Dados</button>
 
                     @if (!User.IsInRole("Admin"))
@@ -322,528 +348,600 @@
         </div>
     </div>
 
+    <div id="modalNovoEnderecoPedido" style="display: none;"></div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
-            // ========================================================
-            // TRUQUE DO ALERTA PERSONALIZADO
-            // ========================================================
-            window.alert = function(mensagem) {
-                document.getElementById('customAlertMensagem').innerText = mensagem;
-                
-                if(mensagem.toLowerCase().includes("sucesso")) {
-                    document.getElementById('customAlertTitle').innerText = "Tudo Certo!";
-                    document.getElementById('customAlertIcon').innerHTML = "✔️";
-                    document.getElementById('customAlertIcon').style.background = "rgba(34, 197, 94, 0.2)";
-                    document.getElementById('customAlertTitle').style.color = "#22c55e";
-                } else {
-                    document.getElementById('customAlertTitle').innerText = "Atenção";
-                    document.getElementById('customAlertIcon').innerHTML = "⚠️";
-                    document.getElementById('customAlertIcon').style.background = "rgba(212, 175, 55, 0.2)";
-                    document.getElementById('customAlertTitle').style.color = "var(--gold)";
-                }
-                
-                document.getElementById('customAlertModal').style.display = 'flex';
+        // ========================================================
+        // 1. SISTEMA DE ALERTAS E CONFIRMAÇÕES (UI PERSONALIZADA)
+        // ========================================================
+        
+        window.alert = function(msg) {
+            const modal = document.getElementById('customAlertModal');
+            const mensagemTexto = document.getElementById('customAlertMensagem');
+            const title = document.getElementById('customAlertTitle');
+            const icon = document.getElementById('customAlertIcon');
+
+            mensagemTexto.innerText = msg;
+            
+            if(msg.toLowerCase().includes("sucesso")) {
+                title.innerText = "Tudo Certo!";
+                title.style.color = "#22c55e";
+                icon.innerHTML = "✔️";
+                icon.style.background = "rgba(34, 197, 94, 0.2)";
+            } else {
+                title.innerText = "Atenção";
+                title.style.color = "var(--gold)";
+                icon.innerHTML = "⚠️";
+                icon.style.background = "rgba(212, 175, 55, 0.2)";
+            }
+            modal.style.display = 'flex';
+        };
+
+        let callbackConfirmacaoGlobal = null;
+        function perguntar(mensagem, callback) {
+            document.getElementById('confirmMessage').innerText = mensagem;
+            document.getElementById('customConfirmModal').style.display = 'flex';
+            callbackConfirmacaoGlobal = callback;
+        }
+
+        document.getElementById('btnConfirmSim').onclick = function() {
+            if (callbackConfirmacaoGlobal) callbackConfirmacaoGlobal();
+            fecharConfirmacao();
+        };
+
+        function fecharAlertaPersonalizado() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
+        function fecharConfirmacao() {
+            document.getElementById('customConfirmModal').style.display = 'none';
+            callbackConfirmacaoGlobal = null;
+        }
+
+        // ========================================================
+        // 2. LÓGICA DE VALIDAÇÃO DE SEGURANÇA (SENHA)
+        // ========================================================
+        function validarForcaDaSenha(senha) {
+            const regexMaiuscula = /[A-Z]/;
+            const regexMinuscula = /[a-z]/;
+            const regexNumero = /[0-9]/;
+            
+            if (senha.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
+            if (!regexMaiuscula.test(senha)) return "A senha deve conter pelo menos uma letra maiúscula.";
+            if (!regexMinuscula.test(senha)) return "A senha deve conter pelo menos uma letra minúscula.";
+            if (!regexNumero.test(senha)) return "A senha deve conter pelo menos um número.";
+            
+            return null; 
+        }
+
+        // ========================================================
+        // 3. COMUNICAÇÃO AJAX (CADASTRO E RECUPERAÇÃO)
+        // ========================================================
+        function enviarCadastroAjax(event) {
+            event.preventDefault(); 
+            const form = document.getElementById('formCadastro');
+            const senha = form.querySelector('[name="Senha"]').value;
+            const confirmar = form.querySelector('[name="ConfirmarSenha"]').value;
+
+            if (senha !== confirmar) {
+                alert("As senhas que você digitou não coincidem! Por favor, verifique e digite novamente.");
+                return;
+            }
+
+            // VALIDAÇÃO DA SENHA
+            const erroSenha = validarForcaDaSenha(senha);
+            if (erroSenha) {
+                alert(erroSenha);
+                return;
+            }
+
+            const payload = {
+                Nome: form.querySelector('[name="Nome"]').value,
+                Sobrenome: form.querySelector('[name="Sobrenome"]').value,
+                Email: form.querySelector('[name="Email"]').value,
+                Telefone: form.querySelector('[name="Telefone"]').value,
+                NomeUsuario: form.querySelector('[name="NomeUsuario"]').value,
+                CPF: form.querySelector('[name="CPF"]').value,
+                Senha: senha,
+                ConfirmarSenha: confirmar
             };
 
-            function fecharAlertaPersonalizado() {
-                document.getElementById('customAlertModal').style.display = 'none';
-            }
-
-            // ========================================================
-            // NOVA LÓGICA DE VALIDAÇÃO DE SENHA NO FRONTEND
-            // ========================================================
-            function validarForcaDaSenha(senha) {
-                const regexMaiuscula = /[A-Z]/;
-                const regexMinuscula = /[a-z]/;
-                const regexNumero = /[0-9]/;
-                
-                if (senha.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
-                if (!regexMaiuscula.test(senha)) return "A senha deve conter pelo menos uma letra maiúscula.";
-                if (!regexMinuscula.test(senha)) return "A senha deve conter pelo menos uma letra minúscula.";
-                if (!regexNumero.test(senha)) return "A senha deve conter pelo menos um número.";
-                
-                return null; 
-            }
-
-            // ========================================================
-            // LÓGICA DE CADASTRO VIA AJAX 
-            // ========================================================
-            function enviarCadastroAjax(event) {
-                event.preventDefault(); 
-
-                const form = document.getElementById('formCadastro');
-                const senha = form.querySelector('[name="Senha"]').value;
-                const confirmar = form.querySelector('[name="ConfirmarSenha"]').value;
-
-                if (senha !== confirmar) {
-                    alert("As senhas que você digitou não coincidem! Por favor, verifique e digite novamente.");
-                    return;
-                }
-
-                // VALIDAÇÃO DA SENHA AQUI
-                const erroSenha = validarForcaDaSenha(senha);
-                if (erroSenha) {
-                    alert(erroSenha);
-                    return;
-                }
-
-                const payload = {
-                    Nome: form.querySelector('[name="Nome"]').value,
-                    Sobrenome: form.querySelector('[name="Sobrenome"]').value,
-                    Email: form.querySelector('[name="Email"]').value,
-                    Telefone: form.querySelector('[name="Telefone"]').value,
-                    NomeUsuario: form.querySelector('[name="NomeUsuario"]').value,
-                    CPF: form.querySelector('[name="CPF"]').value,
-                    Senha: senha,
-                    ConfirmarSenha: confirmar
-                };
-
-                fetch('/Conta/Cadastrar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(async res => {
-                    if (res.ok) {
-                        fecharModal(); 
-                        window.location.reload(); 
-                    } else {
-                        const txt = await res.text();
-                        try {
-                            const obj = JSON.parse(txt);
-                            alert(obj.mensagem || "Verifique os dados informados e tente novamente.");
-                        } catch {
-                            alert(txt || "Falha na comunicação com o servidor ao processar o cadastro.");
-                        }
+            fetch('/Conta/Cadastrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async res => {
+                if (res.ok) {
+                    fecharModal(); 
+                    window.location.reload(); 
+                } else {
+                    const txt = await res.text();
+                    try {
+                        const obj = JSON.parse(txt);
+                        alert(obj.mensagem || "Verifique os dados informados e tente novamente.");
+                    } catch {
+                        alert(txt || "Falha na comunicação com o servidor ao processar o cadastro.");
                     }
-                }).catch(err => alert("Não foi possível conectar ao servidor. Verifique sua conexão."));
+                }
+            }).catch(err => alert("Não foi possível conectar ao servidor. Verifique sua conexão."));
+        }
+
+        function enviarRecuperacaoAjax(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('formRecuperacao');
+            const novaSenha = form.querySelector('[name="NovaSenha"]').value;
+            const confirmarNova = form.querySelector('[name="ConfirmarNovaSenha"]').value;
+
+            if (novaSenha !== confirmarNova) {
+                alert("As senhas que você digitou não coincidem!");
+                return;
             }
 
-            // ========================================================
-            // LÓGICA DE RECUPERAÇÃO DE SENHA VIA AJAX
-            // ========================================================
-            function enviarRecuperacaoAjax(event) {
-                event.preventDefault();
+            // VALIDAÇÃO DA NOVA SENHA
+            const erroSenha = validarForcaDaSenha(novaSenha);
+            if (erroSenha) {
+                alert(erroSenha);
+                return;
+            }
 
-                const form = document.getElementById('formRecuperacao');
-                const novaSenha = form.querySelector('[name="NovaSenha"]').value;
-                const confirmarNova = form.querySelector('[name="ConfirmarNovaSenha"]').value;
+            const payload = {
+                Nome: form.querySelector('[name="Nome"]').value,
+                Sobrenome: form.querySelector('[name="Sobrenome"]').value,
+                Email: form.querySelector('[name="Email"]').value,
+                Telefone: form.querySelector('[name="Telefone"]').value,
+                CPF: form.querySelector('[name="CPF"]').value,
+                NovoNomeUsuario: form.querySelector('[name="NovoNomeUsuario"]').value,
+                NovaSenha: novaSenha,
+                ConfirmarNovaSenha: confirmarNova
+            };
 
-                if (novaSenha !== confirmarNova) {
-                    alert("As senhas que você digitou não coincidem!");
-                    return;
-                }
-
-                // VALIDAÇÃO DA NOVA SENHA AQUI
-                const erroSenha = validarForcaDaSenha(novaSenha);
-                if (erroSenha) {
-                    alert(erroSenha);
-                    return;
-                }
-
-                const payload = {
-                    Nome: form.querySelector('[name="Nome"]').value,
-                    Sobrenome: form.querySelector('[name="Sobrenome"]').value,
-                    Email: form.querySelector('[name="Email"]').value,
-                    Telefone: form.querySelector('[name="Telefone"]').value,
-                    CPF: form.querySelector('[name="CPF"]').value,
-                    NovoNomeUsuario: form.querySelector('[name="NovoNomeUsuario"]').value,
-                    NovaSenha: novaSenha,
-                    ConfirmarNovaSenha: confirmarNova
-                };
-
-                fetch('/Conta/ResetarSenha', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(async res => {
-                    if (res.ok) {
-                        fecharModalRecuperacao();
-                        window.location.reload(); 
-                    } else {
-                        const txt = await res.text();
-                        try {
-                            const obj = JSON.parse(txt);
-                            alert(obj.mensagem || "Verifique os dados informados.");
-                        } catch {
-                            alert(txt || "Falha na comunicação com o servidor ao redefinir a senha.");
-                        }
+            fetch('/Conta/ResetarSenha', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async res => {
+                if (res.ok) {
+                    fecharModalRecuperacao();
+                    window.location.reload(); 
+                } else {
+                    const txt = await res.text();
+                    try {
+                        const obj = JSON.parse(txt);
+                        alert(obj.mensagem || "Verifique os dados informados.");
+                    } catch {
+                        alert(txt || "Falha na comunicação com o servidor ao redefinir a senha.");
                     }
-                }).catch(err => alert("Não foi possível conectar ao servidor. Verifique sua conexão."));
+                }
+            }).catch(err => alert("Não foi possível conectar ao servidor. Verifique sua conexão."));
+        }
+
+        // ========================================================
+        // --- FUNÇÕES DE ENDEREÇO FORMATO PALMAS COM VIACEP (AJAX) ---
+        // ========================================================
+        function buscarCepNaApi() {
+            const cep = document.getElementById('endCep').value;
+            if (cep.length === 8) {
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            // Em Palmas, o ViaCEP as vezes joga a Quadra no Bairro e a Alameda no Logradouro
+                            document.getElementById('endQuadra').value = data.bairro || '';
+                            document.getElementById('endAlameda').value = data.logradouro || '';
+                            
+                            // Foca automaticamente no campo Lote para o usuário continuar digitando
+                            document.getElementById('endLote').focus();
+                        } else {
+                            alert("Atenção: O CEP informado não foi encontrado.");
+                        }
+                    })
+                    .catch(() => alert("Erro ao buscar o CEP na internet."));
             }
+        }
 
-            // --- MODAIS GERAIS ---
-            function abrirModal() { 
-                fecharModalLogin();
-                document.getElementById('modalCadastro').style.display = 'flex'; 
-            }
-            function fecharModal() { document.getElementById('modalCadastro').style.display = 'none'; }
-
-            function abrirModalLogin() { document.getElementById('modalLogin').style.display = 'flex'; }
-            function fecharModalLogin() { document.getElementById('modalLogin').style.display = 'none'; }
-
-            function abrirModalRecuperacao() {
-                fecharModalLogin();
-                document.getElementById('modalRecuperarSenha').style.display = 'flex';
-            }
-            function fecharModalRecuperacao() { document.getElementById('modalRecuperarSenha').style.display = 'none'; }
-
-            // --- MODAL DE PERFIL E ABAS ---
-            function abrirPerfil() {
-                document.getElementById('perfilModal').style.display = 'flex';
-                carregarAba(document.getElementById('btnAbaDados') ? 'Dados' : 'Pratos');
-            }
-            function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
-
-            function carregarAba(aba) {
-                $(".perfil-nav-btn").removeClass("active");
+        function abrirModalEndereco(id = null, cep = '', quadra = '', alameda = '', lote = '', comp = '', ref = '') {
+            document.getElementById('endId').value = id || '';
+            document.getElementById('endCep').value = cep;
+            document.getElementById('endQuadra').value = quadra;
+            document.getElementById('endAlameda').value = alameda;
+            document.getElementById('endLote').value = lote;
+            document.getElementById('endComplemento').value = comp;
+            document.getElementById('endReferencia').value = ref;
             
-                if (aba === 'Dados' && document.getElementById('btnAbaDados')) {
-                    $("#btnAbaDados").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                    $("#perfilContent").load("/Conta/ObterDadosPerfil");
+            document.getElementById('tituloModalEnd').innerText = id ? 'Editar Endereço' : 'Novo Endereço';
+            document.getElementById('enderecoModal').style.display = 'flex';
+        }
+
+        function fecharModalEndereco() {
+            document.getElementById('enderecoModal').style.display = 'none';
+        }
+
+        function salvarEndereco(e) {
+            e.preventDefault();
+            
+            const model = {
+                Id: document.getElementById('endId').value ? parseInt(document.getElementById('endId').value) : null,
+                CEP: document.getElementById('endCep').value,
+                Quadra: document.getElementById('endQuadra').value,
+                Alameda: document.getElementById('endAlameda').value,
+                Lote: document.getElementById('endLote').value,
+                Complemento: document.getElementById('endComplemento').value,
+                Referencia: document.getElementById('endReferencia').value
+            };
+
+            fetch('/Conta/SalvarEndereco', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(model)
+            }).then(async res => {
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.mensagem || "Sucesso! Endereço salvo.");
+                    fecharModalEndereco();
+                    carregarAba('Enderecos');
+                } else {
+                    const txt = await res.text();
+                    try {
+                        const obj = JSON.parse(txt);
+                        alert(obj.mensagem || "Verifique os campos do endereço.");
+                    } catch {
+                        alert("Erro ao processar a validação do endereço no servidor.");
+                    }
                 }
-                else if (aba === 'Enderecos' && document.getElementById('btnAbaEnderecos')) {
-                    $("#btnAbaEnderecos").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                    $("#perfilContent").load("/Conta/ObterEnderecos");
-                }
-                else if (aba === 'Pedidos' && document.getElementById('btnAbaPedidos')) {
-                    $("#btnAbaPedidos").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando seus pedidos...</p>');
-                    $("#perfilContent").load("/Pedido/ObterMeusPedidos");
-                }
-                else if (aba === 'Reservas' && document.getElementById('btnAbaReservas')) {
-                    $("#btnAbaReservas").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando suas reservas...</p>');
-                    $("#perfilContent").load("/Reserva/ObterMinhasReservas");
-                }
-                else if (aba === 'Pratos' && document.getElementById('btnAbaPratos')) {
-                    $("#btnAbaPratos").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                    $("#perfilContent").load("/Admin/ObterItensCardapio");
-                }
-                else if (aba === 'Sugestoes' && document.getElementById('btnAbaSugestoes')) {
-                    $("#btnAbaSugestoes").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                    $("#perfilContent").load("/Admin/ObterSugestoes");
-                }
-                else if (aba === 'Usuarios' && document.getElementById('btnAbaUsuarios')) {
-                    $("#btnAbaUsuarios").addClass("active");
-                    $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                    $("#perfilContent").load("/Admin/ObterUsuarios?mostrarInativos=false");
-                }
-                else if (aba === 'Relatorios' && document.getElementById('btnAbaRelatorios')) {
-                    $("#btnAbaRelatorios").addClass("active");
-                    $("#perfilContent").html('<div style="text-align: center; color: var(--gold); margin-top: 50px;">Carregando relatórios...</div>');
-                    $("#perfilContent").load("/Admin/ObterRelatorios");
-                }
-                else {
-                    $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
-                }
+            }).catch(() => alert("Não foi possível conectar ao servidor para salvar o endereço."));
+        }
+
+        function removerEndereco(id) {
+            if(confirm("Deseja remover este endereço?")) {
+                fetch('/Conta/RemoverEndereco/' + id, { method: 'POST' })
+                    .then(() => carregarAba('Enderecos'));
+            }
+        }
+
+        // --- MODAIS GERAIS ---
+        function abrirModal() { 
+            fecharModalLogin();
+            document.getElementById('modalCadastro').style.display = 'flex'; 
+        }
+        function fecharModal() { document.getElementById('modalCadastro').style.display = 'none'; }
+
+        function abrirModalLogin() { document.getElementById('modalLogin').style.display = 'flex'; }
+        function fecharModalLogin() { document.getElementById('modalLogin').style.display = 'none'; }
+
+        function abrirModalRecuperacao() {
+            fecharModalLogin();
+            document.getElementById('modalRecuperarSenha').style.display = 'flex';
+        }
+        function fecharModalRecuperacao() { document.getElementById('modalRecuperarSenha').style.display = 'none'; }
+
+        // --- MODAL DE PERFIL E ABAS ---
+        function abrirPerfil() {
+            document.getElementById('perfilModal').style.display = 'flex';
+            carregarAba(document.getElementById('btnAbaDados') ? 'Dados' : 'Pratos');
+        }
+        function fecharPerfil() { document.getElementById('perfilModal').style.display = 'none'; }
+
+        function carregarAba(aba) {
+            $(".perfil-nav-btn").removeClass("active");
+            const btn = document.getElementById(`btnAba${aba}`);
+            if (btn) btn.classList.add("active");
+            
+            const map = { 
+                'Dados': '/Conta/ObterDadosPerfil', 
+                'Enderecos': '/Conta/ObterEnderecos', 
+                'Pratos': '/Admin/ObterItensCardapio', 
+                'Sugestoes': '/Admin/ObterSugestoes',
+                'Usuarios': '/Admin/ObterUsuarios',
+                'Relatorios': '/Admin/ObterRelatorios',
+                'Pedidos': '/Pedido/ObterMeusPedidos',
+                'Reservas': '/Reserva/ObterMinhasReservas'
+            };
+
+            if(map[aba]) {
+                $("#perfilContent").html('<p style="color: white; text-align:center;">Carregando...</p>');
+                $("#perfilContent").load(map[aba]);
+            }
+        }
+
+        window.carregarMeusPedidos = function() {
+            carregarAba('Pedidos');
+        }
+
+        // --- LÓGICA DE CANCELAMENTO DE RESERVAS ---
+        function cancelarReserva(id, dataReservaStr) {
+            const dataReserva = new Date(dataReservaStr);
+            const agora = new Date();
+            
+            const horasDiferenca = (dataReserva - agora) / (1000 * 60 * 60);
+            let msgConfirmacao = "Tem certeza que deseja cancelar esta reserva?";
+            
+            if (horasDiferenca < 6) {
+                msgConfirmacao = "ATENÇÃO: Faltam menos de 6 horas para a sua reserva!\n\nDe acordo com as nossas políticas, será cobrada uma multa de R$ 50,00 pelo cancelamento tardio.\n\nDeseja cancelar mesmo assim?";
             }
 
-            window.carregarMeusPedidos = function() {
-                carregarAba('Pedidos');
+            if (confirm(msgConfirmacao)) {
+                fetch('/Reserva/CancelarReserva/' + id, { method: 'POST' })
+                .then(async res => {
+                    if (res.ok) {
+                        const data = await res.json();
+                        alert(data.mensagem); 
+                        carregarAba('Reservas'); 
+                    } else {
+                        alert(await res.text());
+                    }
+                });
             }
+        }
 
-            // --- LÓGICA DE CANCELAMENTO DE RESERVAS ---
-            function cancelarReserva(id, dataReservaStr) {
-                const dataReserva = new Date(dataReservaStr);
-                const agora = new Date();
-                
-                const horasDiferenca = (dataReserva - agora) / (1000 * 60 * 60);
-                let msgConfirmacao = "Tem certeza que deseja cancelar esta reserva?";
-                
-                if (horasDiferenca < 6) {
-                    msgConfirmacao = "ATENÇÃO: Faltam menos de 6 horas para a sua reserva!\n\nDe acordo com as nossas políticas, será cobrada uma multa de R$ 50,00 pelo cancelamento tardio.\n\nDeseja cancelar mesmo assim?";
-                }
+        // --- FUNÇÕES DE CONTA E PERFIL ---
+        function desativarMinhaConta() {
+            if(confirm("ATENÇÃO: Tem certeza absoluta que deseja desativar sua conta? Você será desconectado imediatamente.")) {
+                fetch('/Conta/DesativarConta', { method: 'POST' })
+                .then(async response => {
+                    if(response.ok) {
+                        window.location.href = '/';
+                    } else {
+                        const msg = await response.text();
+                        alert(msg || "Erro ao tentar desativar a conta.");
+                    }
+                }).catch(() => {
+                    alert("Erro de connection com o servidor.");
+                });
+            }
+        }
 
-                if (confirm(msgConfirmacao)) {
-                    fetch('/Reserva/CancelarReserva/' + id, { method: 'POST' })
+        // --- FUNÇÕES DE CARDÁPIO E INGREDIENTES (ADMIN - AJAX) ---
+        let ingredientesChecadosGlobal = [];
+
+        function carregarIngredientesNoSelect(idsSelecionados = []) {
+            ingredientesChecadosGlobal = idsSelecionados;
+            
+            fetch('/Admin/ObterIngredientes')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('listaIngredientesVisual');
+                    container.innerHTML = '';
+                    
+                    if(data.length === 0) {
+                        container.innerHTML = '<p style="color: var(--text-gray); font-size: 0.85rem; margin: 5px 0;">Nenhum ingrediente cadastrado.</p>';
+                        return;
+                    }
+
+                    data.forEach(ing => {
+                        const isChecked = ingredientesChecadosGlobal.includes(ing.id) ? 'checked' : '';
+                        
+                        container.innerHTML += `
+                            <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <label style="display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; flex: 1;">
+                                    <input type="checkbox" class="ing-checkbox" value="${ing.id}" ${isChecked} onchange="atualizarChecados(this)">
+                                    <span id="ing-nome-${ing.id}" style="color: white; font-size: 0.9rem;">${ing.nome}</span>
+                                </label>
+                                <div id="ing-acoes-${ing.id}" style="display: flex; gap: 8px;">
+                                    <button type="button" onclick="habilitarEdicaoIngrediente(${ing.id}, '${ing.nome.replace("'", "\\'")}')" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Editar">✏️</button>
+                                    <button type="button" onclick="deletarIngredienteGlobal(${ing.id})" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Excluir">❌</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+        }
+
+        function atualizarChecados(checkbox) {
+            const id = parseInt(checkbox.value);
+            if(checkbox.checked) {
+                if(!ingredientesChecadosGlobal.includes(id)) ingredientesChecadosGlobal.push(id);
+            } else {
+                ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
+            }
+        }
+
+        function habilitarEdicaoIngrediente(id, nomeAtual) {
+            const spanNome = document.getElementById(`ing-nome-${id}`);
+            const divAcoes = document.getElementById(`ing-acoes-${id}`);
+
+            spanNome.innerHTML = `<input type="text" id="input-edit-${id}" value="${nomeAtual}" class="form-input" style="padding: 2px 5px; height: 28px; width: 150px; font-size: 0.85rem;">`;
+
+            divAcoes.innerHTML = `
+                <button type="button" onclick="salvarEdicaoIngrediente(${id})" style="background: none; border: none; cursor: pointer;" title="Salvar">💾</button>
+                <button type="button" onclick="carregarIngredientesNoSelect(ingredientesChecadosGlobal)" style="background: none; border: none; cursor: pointer;" title="Cancelar">🚫</button>
+            `;
+        }
+
+        function salvarEdicaoIngrediente(id) {
+            const novoNome = document.getElementById(`input-edit-${id}`).value;
+            if(!novoNome) return alert("O nome não pode ser vazio.");
+
+            fetch(`/Admin/AtualizarIngrediente/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Nome: novoNome })
+            }).then(response => {
+                if(response.ok) carregarIngredientesNoSelect(ingredientesChecadosGlobal);
+                else alert("Erro ao atualizar ingrediente.");
+            });
+        }
+
+        function deletarIngredienteGlobal(id) {
+            if(confirm("Tem certeza que deseja apagar este ingrediente do sistema? Ele sumirá de todos os pratos.")) {
+                fetch(`/Admin/RemoverIngrediente/${id}`, { method: 'POST' })
+                    .then(response => {
+                        if(response.ok) {
+                            ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
+                            carregarIngredientesNoSelect(ingredientesChecadosGlobal);
+                        }
+                    });
+            }
+        }
+
+        function salvarNovoIngrediente() {
+            const nome = document.getElementById('novoIngredienteNome').value;
+            if(!nome) return alert('Digite o nome do ingrediente.');
+
+            fetch('/Admin/AdicionarIngredienteRapido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(nome)
+            })
+            .then(response => response.json())
+            .then(data => {
+                ingredientesChecadosGlobal.push(data.id);
+                carregarIngredientesNoSelect(ingredientesChecadosGlobal);
+                document.getElementById('novoIngredienteNome').value = '';
+            });
+        }
+
+        // ========================================================
+        // 4. GERENCIAMENTO ADMINISTRATIVO (PRATOS) - CORRIGIDO
+        // ========================================================
+        function confirmarTrocaStatusPrato(id, acao) {
+            perguntar(`Deseja realmente ${acao} este prato do cardápio?`, function() {
+                
+                // MUDANÇA 1: Passamos o ID com "?id=" para forçar o C# a encontrar o prato independentemente da rota
+                fetch(`/Admin/AlternarStatusPrato?id=${id}`, { method: 'POST' })
                     .then(async res => {
                         if (res.ok) {
                             const data = await res.json();
-                            alert(data.mensagem); 
-                            carregarAba('Reservas'); 
-                        } else {
-                            alert(await res.text());
-                        }
-                    });
-                }
-            }
-
-            // --- FUNÇÕES DE CONTA E PERFIL ---
-            function desativarMinhaConta() {
-                if(confirm("ATENÇÃO: Tem certeza absoluta que deseja desativar sua conta? Você será desconectado imediatamente.")) {
-                    fetch('/Conta/DesativarConta', { method: 'POST' })
-                    .then(async response => {
-                        if(response.ok) {
-                            window.location.href = '/';
-                        } else {
-                            const msg = await response.text();
-                            alert(msg || "Erro ao tentar desativar a conta.");
-                        }
-                    }).catch(() => {
-                        alert("Erro de conexão com o servidor.");
-                    });
-                }
-            }
-
-            // --- FUNÇÕES DE ENDEREÇO (AJAX) ---
-            function abrirModalEndereco(id = null, log = '', num = '', bairro = '', cep = '') {
-                document.getElementById('endId').value = id || '';
-                document.getElementById('endLogradouro').value = log;
-                document.getElementById('endNumero').value = num;
-                document.getElementById('endBairro').value = bairro;
-                document.getElementById('endCep').value = cep;
-                document.getElementById('tituloModalEnd').innerText = id ? 'Editar Endereço' : 'Novo Endereço';
-                document.getElementById('enderecoModal').style.display = 'flex';
-            }
-
-            function fecharModalEndereco() {
-                document.getElementById('enderecoModal').style.display = 'none';
-            }
-
-            function salvarEndereco(e) {
-                e.preventDefault();
-                const model = {
-                    Id: document.getElementById('endId').value ? parseInt(document.getElementById('endId').value) : null,
-                    Logradouro: document.getElementById('endLogradouro').value,
-                    Numero: document.getElementById('endNumero').value,
-                    Bairro: document.getElementById('endBairro').value,
-                    CEP: document.getElementById('endCep').value
-                };
-
-                fetch('/Conta/SalvarEndereco', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(model)
-                }).then(() => {
-                    fecharModalEndereco();
-                    carregarAba('Enderecos');
-                });
-            }
-
-            function removerEndereco(id) {
-                if(confirm("Deseja remover este endereço?")) {
-                    fetch('/Conta/RemoverEndereco/' + id, { method: 'POST' })
-                        .then(() => carregarAba('Enderecos'));
-                }
-            }
-
-            // --- FUNÇÕES DE CARDÁPIO E INGREDIENTES (ADMIN - AJAX) ---
-            let ingredientesChecadosGlobal = [];
-
-            function carregarIngredientesNoSelect(idsSelecionados = []) {
-                ingredientesChecadosGlobal = idsSelecionados;
-                
-                fetch('/Admin/ObterIngredientes')
-                    .then(response => response.json())
-                    .then(data => {
-                        const container = document.getElementById('listaIngredientesVisual');
-                        container.innerHTML = '';
-                        
-                        if(data.length === 0) {
-                            container.innerHTML = '<p style="color: var(--text-gray); font-size: 0.85rem; margin: 5px 0;">Nenhum ingrediente cadastrado.</p>';
-                            return;
-                        }
-
-                        data.forEach(ing => {
-                            const isChecked = ingredientesChecadosGlobal.includes(ing.id) ? 'checked' : '';
+                            alert(data.mensagem);
                             
-                            container.innerHTML += `
-                                <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <label style="display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; flex: 1;">
-                                        <input type="checkbox" class="ing-checkbox" value="${ing.id}" ${isChecked} onchange="atualizarChecados(this)">
-                                        <span id="ing-nome-${ing.id}" style="color: white; font-size: 0.9rem;">${ing.nome}</span>
-                                    </label>
-                                    <div id="ing-acoes-${ing.id}" style="display: flex; gap: 8px;">
-                                        <button type="button" onclick="habilitarEdicaoIngrediente(${ing.id}, '${ing.nome.replace("'", "\\'")}')" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Editar">✏️</button>
-                                        <button type="button" onclick="deletarIngredienteGlobal(${ing.id})" style="background: none; border: none; cursor: pointer; filter: grayscale(100%); transition: 0.3s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'" title="Excluir">❌</button>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    });
-            }
-
-            function atualizarChecados(checkbox) {
-                const id = parseInt(checkbox.value);
-                if(checkbox.checked) {
-                    if(!ingredientesChecadosGlobal.includes(id)) ingredientesChecadosGlobal.push(id);
-                } else {
-                    ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
-                }
-            }
-
-            function habilitarEdicaoIngrediente(id, nomeAtual) {
-                const spanNome = document.getElementById(`ing-nome-${id}`);
-                const divAcoes = document.getElementById(`ing-acoes-${id}`);
-
-                spanNome.innerHTML = `<input type="text" id="input-edit-${id}" value="${nomeAtual}" class="form-input" style="padding: 2px 5px; height: 28px; width: 150px; font-size: 0.85rem;">`;
-
-                divAcoes.innerHTML = `
-                    <button type="button" onclick="salvarEdicaoIngrediente(${id})" style="background: none; border: none; cursor: pointer;" title="Salvar">💾</button>
-                    <button type="button" onclick="carregarIngredientesNoSelect(ingredientesChecadosGlobal)" style="background: none; border: none; cursor: pointer;" title="Cancelar">🚫</button>
-                `;
-            }
-
-            function salvarEdicaoIngrediente(id) {
-                const novoNome = document.getElementById(`input-edit-${id}`).value;
-                if(!novoNome) return alert("O nome não pode ser vazio.");
-
-                fetch(`/Admin/AtualizarIngrediente/${id}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ Nome: novoNome })
-                }).then(response => {
-                    if(response.ok) carregarIngredientesNoSelect(ingredientesChecadosGlobal);
-                    else alert("Erro ao atualizar ingrediente.");
-                });
-            }
-
-            function deletarIngredienteGlobal(id) {
-                if(confirm("Tem certeza que deseja apagar este ingrediente do sistema? Ele sumirá de todos os pratos.")) {
-                    fetch(`/Admin/RemoverIngrediente/${id}`, { method: 'POST' })
-                        .then(response => {
-                            if(response.ok) {
-                                ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
-                                carregarIngredientesNoSelect(ingredientesChecadosGlobal);
-                            }
-                        });
-                }
-            }
-
-            function salvarNovoIngrediente() {
-                const nome = document.getElementById('novoIngredienteNome').value;
-                if(!nome) return alert('Digite o nome do ingrediente.');
-
-                fetch('/Admin/AdicionarIngredienteRapido', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(nome)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    ingredientesChecadosGlobal.push(data.id);
-                    carregarIngredientesNoSelect(ingredientesChecadosGlobal);
-                    document.getElementById('novoIngredienteNome').value = '';
-                });
-            }
-
-            function abrirModalItemCardapio(id = null, nome = '', desc = '', preco = '', periodo = '0', ingredientesSelecionados = '[]') {
-                document.getElementById('itemId').value = id || '';
-                document.getElementById('itemNome').value = nome;
-                document.getElementById('itemDescricao').value = desc;
-                document.getElementById('itemPreco').value = preco;
-                document.getElementById('itemPeriodo').value = periodo;
-            
-                const idsParseados = JSON.parse(ingredientesSelecionados);
-                carregarIngredientesNoSelect(idsParseados);
-            
-                document.getElementById('tituloModalItem').innerText = id ? 'Editar Prato' : 'Novo Prato';
-                document.getElementById('itemCardapioModal').style.display = 'flex';
-            }
-
-            function fecharModalItemCardapio() {
-                document.getElementById('itemCardapioModal').style.display = 'none';
-            }
-
-            function salvarItemCardapio(e) {
-                e.preventDefault();
-
-                const model = {
-                    Id: document.getElementById('itemId').value ? parseInt(document.getElementById('itemId').value) : null,
-                    Nome: document.getElementById('itemNome').value,
-                    Descricao: document.getElementById('itemDescricao').value,
-                    PrecoBase: parseFloat(document.getElementById('itemPreco').value),
-                    Periodo: parseInt(document.getElementById('itemPeriodo').value),
-                    IngredientesIds: ingredientesChecadosGlobal
-                };
-
-                fetch('/Admin/SalvarItemCardapio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(model)
-                }).then(async (response) => {
-                    if (response.ok) {
-                        fecharModalItemCardapio();
-                        carregarAba('Pratos');
-                    } else {
-                        const erroMsg = await response.text();
-                        alert(erroMsg);
-                    }
-                }).catch(error => {
-                    alert("Erro crítico de conexão com o servidor.");
-                });
-            }
-
-            function removerItemCardapio(id) {
-                if(confirm("Deseja remover este prato do cardápio permanentemente?")) {
-                    fetch('/Admin/RemoverItemCardapio/' + id, { method: 'POST' })
-                        .then(() => carregarAba('Pratos'));
-                }
-            }
-
-            // --- FUNÇÕES DE SUGESTÃO DO CHEFE (ADMIN) ---
-            function definirSugestaoManual(id) {
-                fetch(`/Admin/DefinirSugestao?pratoId=${id}`, { method: 'POST' })
-                    .then(response => {
-                        if(response.ok) carregarAba('Sugestoes');
-                        else alert("Erro ao definir sugestão.");
-                    });
-            }
-
-            function sortearSugestao(periodo) {
-                fetch(`/Admin/SortearSugestao?periodo=${periodo}`, { method: 'POST' })
-                    .then(response => {
-                        if(response.ok) carregarAba('Sugestoes');
-                        else alert("Erro ao sortear.");
-                    });
-            }
-
-            // --- FUNÇÕES DE USUÁRIOS (ADMIN) ---
-            function toggleUsuariosInativos() {
-                const mostrar = document.getElementById('chkMostrarInativos').checked;
-                $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
-                $("#perfilContent").load(`/Admin/ObterUsuarios?mostrarInativos=${mostrar}`);
-            }
-
-            function alternarStatusUsuario(id, desativando) {
-                const acao = desativando ? "desativar" : "reativar";
-                
-                if (confirm(`Tem certeza que deseja ${acao} este usuário?`)) {
-                    fetch(`/Admin/AlternarStatusUsuario/${id}`, { method: 'POST' })
-                    .then(async response => {
-                        if (response.ok) {
-                            toggleUsuariosInativos();
+                            // MUDANÇA 2: Atualizamos apenas a lista mantendo o seu filtro atual
+                            const filtroAtual = window.ultimoFiltroAplicado || 'ativos';
+                            carregarAbaPratosFiltro(filtroAtual);
+                            
                         } else {
-                            const msg = await response.text();
-                            alert(msg || `Erro ao ${acao} o usuário.`);
+                            // MUDANÇA 3: Se o C# recusar (ex: ID não encontrado), agora ele vai te avisar
+                            const txt = await res.text();
+                            alert("Não foi possível alterar o status: " + txt);
                         }
-                    }).catch(() => alert("Erro crítico de conexão com o servidor."));
-                }
-            }
+                    })
+                    .catch(err => {
+                        alert("Erro crítico: O navegador não conseguiu falar com o servidor.");
+                    });
+            });
+        }
 
-            // --- FECHAR MODAIS CLICANDO FORA ---
-            window.onclick = function (event) {
-                let modais = [
-                    document.getElementById('modalCadastro'),
-                    document.getElementById('modalLogin'),
-                    document.getElementById('modalRecuperarSenha'),
-                    document.getElementById('perfilModal'),
-                    document.getElementById('enderecoModal'),
-                    document.getElementById('itemCardapioModal')
-                ];
-                modais.forEach(m => { if (event.target == m && m != null) m.style.display = 'none'; });
+        function carregarAbaPratosFiltro(valorFiltro) {
+            window.ultimoFiltroAplicado = valorFiltro;
+            const container = $("#perfilContent");
+            container.html('<p style="color: white; text-align:center; padding: 20px;">Atualizando lista...</p>');
+            
+            // Forçamos o GET passando o parâmetro na URL para evitar o erro 405
+            container.load(`/Admin/ObterItensCardapio?filtro=${valorFiltro}`, function(res, status, xhr) {
+                if (status === "error") alert("Erro ao filtrar: " + xhr.status);
+            });
+        }
+
+        function abrirModalItemCardapio(id = null, nome = '', desc = '', preco = '', periodo = '0', ingredientesSelecionados = '[]') {
+            document.getElementById('itemId').value = id || '';
+            document.getElementById('itemNome').value = nome;
+            document.getElementById('itemDescricao').value = desc;
+            document.getElementById('itemPreco').value = preco;
+            document.getElementById('itemPeriodo').value = periodo;
+        
+            const idsParseados = JSON.parse(ingredientesSelecionados);
+            carregarIngredientesNoSelect(idsParseados);
+        
+            document.getElementById('tituloModalItem').innerText = id ? 'Editar Prato' : 'Novo Prato';
+            document.getElementById('itemCardapioModal').style.display = 'flex';
+        }
+
+        function fecharModalItemCardapio() {
+            document.getElementById('itemCardapioModal').style.display = 'none';
+        }
+
+        function salvarItemCardapio(e) {
+            e.preventDefault();
+
+            const model = {
+                Id: document.getElementById('itemId').value ? parseInt(document.getElementById('itemId').value) : null,
+                Nome: document.getElementById('itemNome').value,
+                Descricao: document.getElementById('itemDescricao').value,
+                PrecoBase: parseFloat(document.getElementById('itemPreco').value),
+                Periodo: parseInt(document.getElementById('itemPeriodo').value),
+                IngredientesIds: ingredientesChecadosGlobal
+            };
+
+            fetch('/Admin/SalvarItemCardapio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(model)
+            }).then(async (response) => {
+                if (response.ok) {
+                    fecharModalItemCardapio();
+                    carregarAba('Pratos');
+                } else {
+                    const erroMsg = await response.text();
+                    alert(erroMsg);
+                }
+            }).catch(error => {
+                alert("Erro crítico de conexão com o servidor.");
+            });
+        }
+
+        function removerItemCardapio(id) {
+            if(confirm("Deseja remover este prato do cardápio permanentemente?")) {
+                fetch('/Admin/RemoverItemCardapio/' + id, { method: 'POST' })
+                    .then(() => carregarAba('Pratos'));
             }
+        }
+
+        // --- FUNÇÕES DE SUGESTÃO DO CHEFE (ADMIN) ---
+        function definirSugestaoManual(id) {
+            fetch(`/Admin/DefinirSugestao?pratoId=${id}`, { method: 'POST' })
+                .then(response => {
+                    if(response.ok) carregarAba('Sugestoes');
+                    else alert("Erro ao definir sugestão.");
+                });
+        }
+
+        function sortearSugestao(periodo) {
+            fetch(`/Admin/SortearSugestao?periodo=${periodo}`, { method: 'POST' })
+                .then(response => {
+                    if(response.ok) carregarAba('Sugestoes');
+                    else alert("Erro ao sortear.");
+                });
+        }
+
+        // --- FUNÇÕES DE USUÁRIOS (ADMIN) ---
+        function toggleUsuariosInativos() {
+            const mostrar = document.getElementById('chkMostrarInativos').checked;
+            $("#perfilContent").html('<p style="color: white; text-align:center;">Carregando...</p>');
+            $("#perfilContent").load(`/Admin/ObterUsuarios?mostrarInativos=${mostrar}`);
+        }
+
+        function alternarStatusUsuario(id, desativando) {
+            const acao = desativando ? "desativar" : "reativar";
+            
+            if (confirm(`Tem certeza que deseja ${acao} este usuário?`)) {
+                fetch(`/Admin/AlternarStatusUsuario/${id}`, { method: 'POST' })
+                .then(async response => {
+                    if (response.ok) {
+                        toggleUsuariosInativos();
+                    } else {
+                        const msg = await response.text();
+                        alert(msg || `Erro ao ${acao} o usuário.`);
+                    }
+                }).catch(() => alert("Erro crítico de conexão com o servidor."));
+            }
+        }
+
+        // --- FECHAR MODAIS CLICANDO FORA ---
+        window.onclick = function (event) {
+            const IDs = ['modalCadastro', 'modalLogin', 'modalRecuperarSenha', 'perfilModal', 'enderecoModal', 'customConfirmModal', 'itemCardapioModal'];
+            IDs.forEach(id => {
+                const el = document.getElementById(id);
+                if (e.target == el && el != null) el.style.display = 'none';
+            });
+        }
     </script>
     
     @if (TempData["MensagemErroSistema"] != null)
     {
         <script>
             window.addEventListener('load', function () {
-                alert('@Html.Raw(TempData["MensagemErroSistema"])');
+                // A utilização do JsonSerializer.Serialize previne o erro CS1012 do Razor e injeta de forma segura no Javascript
+                alert(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["MensagemErroSistema"])));
             });
         </script>
     }

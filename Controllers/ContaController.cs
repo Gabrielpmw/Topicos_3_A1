@@ -37,7 +37,7 @@ namespace restaurante.Controllers
 
             // Verificações de Duplicidade específicas para evitar erros no banco
             if (await _context.Usuarios.AnyAsync(u => u.CPF == model.CPF))
-                return BadRequest(new { mensagem = "Atenção: Este CPF já está cadastrado!" });
+                return BadRequest(new { mensagem = "Atenção: Este CPF já está cadastrado no sistema!" });
 
             if (await _context.Usuarios.AnyAsync(u => u.Email == model.Email))
                 return BadRequest(new { mensagem = "Atenção: Este E-mail já está sendo usado!" });
@@ -69,9 +69,8 @@ namespace restaurante.Controllers
                 return Ok();
             }
 
-            // Captura erros de complexidade de senha definidos no Program.cs
             var erroMsg = string.Join("\n", resultado.Errors.Select(e => e.Description));
-            return BadRequest(new { mensagem = "Sua senha não cumpre os requisitos:\n\n" + erroMsg });
+            return BadRequest(new { mensagem = "Erro no cadastro:\n" + erroMsg });
         }
 
         [HttpPost]
@@ -256,7 +255,7 @@ namespace restaurante.Controllers
         }
 
         // ==========================================
-        // 3. ENDEREÇOS
+        // 3. ENDEREÇOS (FORMATO PALMAS)
         // ==========================================
 
         [HttpGet]
@@ -270,10 +269,12 @@ namespace restaurante.Controllers
                 .Select(e => new EnderecoViewModel
                 {
                     Id = e.Id,
-                    Logradouro = e.Logradouro,
-                    Numero = e.Numero,
-                    Bairro = e.Bairro,
-                    CEP = e.CEP
+                    CEP = e.CEP,
+                    Quadra = e.Quadra,
+                    Alameda = e.Alameda,
+                    Lote = e.Lote,
+                    Complemento = e.Complemento,
+                    Referencia = e.Referencia
                 }).ToList();
 
             return PartialView("_MeusEnderecos", enderecos);
@@ -282,18 +283,27 @@ namespace restaurante.Controllers
         [HttpPost]
         public async Task<IActionResult> SalvarEndereco([FromBody] EnderecoViewModel model)
         {
+            // Valida as obrigatoriedades e o tamanho do CEP definidos no ViewModel
+            if (!ModelState.IsValid)
+            {
+                var erros = string.Join("\n", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return BadRequest(new { mensagem = "Verifique os dados do endereço:\n" + erros });
+            }
+
             var usuario = await _userManager.GetUserAsync(User);
-            if (usuario == null) return Unauthorized();
+            if (usuario == null) return Unauthorized(new { mensagem = "Usuário não autenticado." });
 
             if (model.Id.HasValue && model.Id.Value > 0)
             {
                 var enderecoDb = _context.Enderecos.FirstOrDefault(e => e.Id == model.Id && e.UsuarioId == usuario.Id);
                 if (enderecoDb != null)
                 {
-                    enderecoDb.Logradouro = model.Logradouro;
-                    enderecoDb.Numero = model.Numero;
-                    enderecoDb.Bairro = model.Bairro;
                     enderecoDb.CEP = model.CEP;
+                    enderecoDb.Quadra = model.Quadra;
+                    enderecoDb.Alameda = model.Alameda;
+                    enderecoDb.Lote = model.Lote;
+                    enderecoDb.Complemento = model.Complemento;
+                    enderecoDb.Referencia = model.Referencia;
                     _context.Update(enderecoDb);
                 }
             }
@@ -302,17 +312,19 @@ namespace restaurante.Controllers
                 var novo = new Endereco
                 {
                     UsuarioId = usuario.Id,
-                    Logradouro = model.Logradouro,
-                    Numero = model.Numero,
-                    Bairro = model.Bairro,
                     CEP = model.CEP,
+                    Quadra = model.Quadra,
+                    Alameda = model.Alameda,
+                    Lote = model.Lote,
+                    Complemento = model.Complemento,
+                    Referencia = model.Referencia,
                     IsAtivo = true
                 };
                 _context.Add(novo);
             }
 
             await _context.SaveChangesAsync();
-            return Ok();
+            return Ok(new { mensagem = "Sucesso! Endereço salvo." });
         }
 
         [HttpPost]

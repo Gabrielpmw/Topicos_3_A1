@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using restaurante.Data;
 using restaurante.Models;
 using restaurante.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace restaurante.Controllers
 {
@@ -25,11 +29,19 @@ namespace restaurante.Controllers
         // ==========================================
 
         [HttpGet]
-        public IActionResult ObterItensCardapio()
+        public IActionResult ObterItensCardapio(string filtro = "ativos")
         {
-            var itens = _context.ItensCardapio
+            var query = _context.ItensCardapio
                 .Include(i => i.Ingredientes)
-                .Where(i => i.IsAtivo)
+                .AsQueryable();
+
+            // Aplica o filtro de visualização solicitado pelo Admin
+            if (filtro == "ativos")
+                query = query.Where(i => i.IsAtivo);
+            else if (filtro == "inativos")
+                query = query.Where(i => !i.IsAtivo);
+
+            var itens = query
                 .Select(i => new ItemCardapioViewModel
                 {
                     Id = i.Id,
@@ -37,6 +49,7 @@ namespace restaurante.Controllers
                     Descricao = i.Descricao,
                     PrecoBase = i.PrecoBase,
                     Periodo = (int)i.Periodo,
+                    IsAtivo = i.IsAtivo, // Novo campo para o visual
                     IngredientesIds = i.Ingredientes
                                         .Where(ing => ing.IsAtivo)
                                         .Select(ing => ing.Id)
@@ -58,7 +71,6 @@ namespace restaurante.Controllers
             try
             {
                 var ids = model.IngredientesIds ?? new List<int>();
-
                 var ingredientesSelecionados = await _context.Ingredientes
                     .Where(i => ids.Contains(i.Id) && i.IsAtivo)
                     .ToListAsync();
@@ -75,7 +87,6 @@ namespace restaurante.Controllers
                         itemDb.Descricao = model.Descricao;
                         itemDb.PrecoBase = model.PrecoBase;
                         itemDb.Periodo = (ItemCardapio.PeriodoCardapio)model.Periodo;
-                        itemDb.IsAtivo = true;
 
                         itemDb.Ingredientes.Clear();
                         foreach (var ing in ingredientesSelecionados)
@@ -101,7 +112,7 @@ namespace restaurante.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                return Ok();
+                return Ok(new { mensagem = "Prato salvo com sucesso!" });
             }
             catch (Exception ex)
             {
@@ -109,21 +120,22 @@ namespace restaurante.Controllers
             }
         }
 
+        // NOVO: Soft Delete / Ativação de Pratos
         [HttpPost]
-        public async Task<IActionResult> RemoverItemCardapio(int id)
+        public async Task<IActionResult> AlternarStatusPrato(int id)
         {
-            var item = await _context.ItensCardapio.FindAsync(id);
-            if (item != null)
-            {
-                item.IsAtivo = false;
-                _context.ItensCardapio.Update(item);
+            var prato = await _context.ItensCardapio.FindAsync(id);
+            if (prato == null) return NotFound("Prato não encontrado.");
 
-                await _context.SaveChangesAsync();
-                return Ok();
-            }
-            return NotFound();
+            // Inverte o status: se está ativo, desativa. Se está inativo, ativa.
+            prato.IsAtivo = !prato.IsAtivo;
+
+            _context.ItensCardapio.Update(prato);
+            await _context.SaveChangesAsync();
+
+            string status = prato.IsAtivo ? "ativado" : "desativado";
+            return Ok(new { mensagem = $"Prato {status} com sucesso!" });
         }
-
 
         // ==========================================
         // 2. GERENCIAMENTO DOS INGREDIENTES
@@ -145,12 +157,7 @@ namespace restaurante.Controllers
             if (string.IsNullOrWhiteSpace(nome))
                 return BadRequest("O nome não pode ser vazio.");
 
-            var novo = new Ingrediente
-            {
-                Nome = nome,
-                IsAtivo = true
-            };
-
+            var novo = new Ingrediente { Nome = nome, IsAtivo = true };
             _context.Ingredientes.Add(novo);
             await _context.SaveChangesAsync();
 
@@ -193,7 +200,6 @@ namespace restaurante.Controllers
         [HttpGet]
         public async Task<IActionResult> ObterUsuarios(bool mostrarInativos = false)
         {
-            // Oculta os Administradores da lista para evitar acidentes
             var admins = await _userManager.GetUsersInRoleAsync("Admin");
             var adminIds = admins.Select(a => a.Id).ToList();
 
@@ -214,7 +220,6 @@ namespace restaurante.Controllers
             }).ToListAsync();
 
             ViewBag.MostrarInativos = mostrarInativos;
-
             return PartialView("_GerenciarUsuarios", usuarios);
         }
 
@@ -231,7 +236,6 @@ namespace restaurante.Controllers
             }
 
             usuario.IsAtivo = !usuario.IsAtivo;
-
             _context.Usuarios.Update(usuario);
             await _context.SaveChangesAsync();
 
@@ -246,14 +250,11 @@ namespace restaurante.Controllers
         public async Task<IActionResult> ObterSugestoes()
         {
             var hoje = DateTime.Today;
-
-            // Busca o que já está definido para hoje
             var sugestoesHoje = await _context.SugestoesChefe
                 .Include(s => s.ItemCardapio)
                 .Where(s => s.DataSugestao.Date == hoje)
                 .ToListAsync();
 
-            // Busca todos os pratos ativos para o Admin escolher
             var pratos = await _context.ItensCardapio
                 .Where(i => i.IsAtivo)
                 .ToListAsync();
@@ -271,8 +272,6 @@ namespace restaurante.Controllers
             if (prato == null) return NotFound();
 
             var hoje = DateTime.Today;
-
-            // 1. Remove qualquer sugestão existente para o MESMO PERÍODO no dia de hoje
             var antigas = await _context.SugestoesChefe
                 .Include(s => s.ItemCardapio)
                 .Where(s => s.DataSugestao.Date == hoje && s.ItemCardapio.Periodo == prato.Periodo)
@@ -280,7 +279,6 @@ namespace restaurante.Controllers
 
             _context.SugestoesChefe.RemoveRange(antigas);
 
-            // 2. Adiciona a nova sugestão com os 20% de desconto
             var novaSugestao = new SugestaoChefe
             {
                 ItemCardapioId = pratoId,
@@ -295,14 +293,12 @@ namespace restaurante.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SortearSugestao(int periodo) // 0 = Almoco, 1 = Jantar
+        public async Task<IActionResult> SortearSugestao(int periodo)
         {
             var pEnum = (ItemCardapio.PeriodoCardapio)periodo;
-
-            // Busca um prato aleatório que seja ativo e do período correto
             var pratoSorteado = await _context.ItensCardapio
                 .Where(i => i.IsAtivo && i.Periodo == pEnum)
-                .OrderBy(r => Guid.NewGuid()) // Truque do SQL para sortear
+                .OrderBy(r => Guid.NewGuid())
                 .FirstOrDefaultAsync();
 
             if (pratoSorteado == null) return BadRequest("Nenhum prato cadastrado para este período.");
@@ -310,17 +306,17 @@ namespace restaurante.Controllers
             return await DefinirSugestao(pratoSorteado.Id);
         }
 
+        // ==========================================
+        // 5. RELATÓRIOS
+        // ==========================================
+
         [HttpGet]
         public async Task<IActionResult> ObterRelatorios(DateTime? dataInicio, DateTime? dataFim)
         {
-            // Define um período padrão (últimos 30 dias) se o usuário não escolher uma data
             DateTime inicio = dataInicio ?? DateTime.Today.AddDays(-30);
             DateTime fim = dataFim ?? DateTime.Today;
-
-            // Ajusta o horário final para pegar até as 23:59:59 do dia escolhido
             DateTime fimAjustado = fim.Date.AddDays(1).AddTicks(-1);
 
-            // Busca todos os pedidos concluídos no período
             var pedidosPeriodo = await _context.Pedidos
                 .Include(p => p.Atendimento)
                 .Include(p => p.ItensPedido)
@@ -334,9 +330,8 @@ namespace restaurante.Controllers
                 DataFim = fim
             };
 
-            // 1. Faturamento por Tipo de Atendimento
             relatorio.FaturamentoPresencial = pedidosPeriodo
-                .Where(p => p.Atendimento is AtendimentoRetirada) // Na nossa lógica, Retirada = Presencial
+                .Where(p => p.Atendimento is AtendimentoRetirada)
                 .Sum(p => p.PrecoFinal);
 
             relatorio.FaturamentoDeliveryProprio = pedidosPeriodo
@@ -347,7 +342,6 @@ namespace restaurante.Controllers
                 .Where(p => p.Atendimento is AtendimentoDeliveryApp)
                 .Sum(p => p.PrecoFinal);
 
-            // 2. Itens Mais Vendidos (Com e Sem Sugestão)
             relatorio.ItensMaisVendidos = pedidosPeriodo
                 .SelectMany(p => p.ItensPedido)
                 .GroupBy(i => i.ItemCardapio.Nome)
@@ -355,11 +349,10 @@ namespace restaurante.Controllers
                 {
                     NomePrato = g.Key,
                     QuantidadeTotal = g.Sum(i => i.Quantidade),
-                    // A MÁGICA: Se o preço unitário cobrado foi menor que o preço base da tabela, foi Sugestão!
                     QuantidadeComoSugestao = g.Where(i => i.PrecoUnitario < i.ItemCardapio.PrecoBase).Sum(i => i.Quantidade)
                 })
-                .OrderByDescending(i => i.QuantidadeTotal) // Ordena do mais vendido para o menos vendido
-                .Take(15) // Pega os 15 mais vendidos
+                .OrderByDescending(i => i.QuantidadeTotal)
+                .Take(15)
                 .ToList();
 
             return PartialView("_Relatorios", relatorio);

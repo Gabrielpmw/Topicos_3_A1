@@ -16,7 +16,10 @@ namespace restaurante.Data
         public DbSet<Endereco> Enderecos { get; set; }
         public DbSet<ItemCardapio> ItensCardapio { get; set; }
         public DbSet<Ingrediente> Ingredientes { get; set; }
+
+        // CORREÇÃO: Padronizado para plural para bater com as consultas LINQ do AdminController
         public DbSet<SugestaoChefe> SugestoesChefe { get; set; }
+
         public DbSet<Pedido> Pedidos { get; set; }
         public DbSet<ItemPedido> ItensPedido { get; set; }
         public DbSet<Atendimento> Atendimentos { get; set; }
@@ -41,17 +44,23 @@ namespace restaurante.Data
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.PhoneNumber)
                 .IsUnique();
+
+            // =========================================================
+            // 2. CONFIGURAÇÕES DE RELACIONAMENTO E CHAVES
             // =========================================================
 
             modelBuilder.Entity<ItemPedido>()
                 .HasKey(ip => new { ip.PedidoId, ip.ItemCardapioId });
 
-            // Configuração de Herança (TPH) para Atendimentos
+            // Configuração de Herança (TPH - Table Per Hierarchy) para Atendimentos
             modelBuilder.Entity<AtendimentoRetirada>();
             modelBuilder.Entity<AtendimentoDeliveryProprio>();
             modelBuilder.Entity<AtendimentoDeliveryApp>();
 
-            // Formatação global para propriedades decimais (Dinheiro/Taxas)
+            // =========================================================
+            // 3. FORMATAÇÃO GLOBAL PARA VALORES MONETÁRIOS
+            // =========================================================
+            // Garante que todas as propriedades decimais no banco usem 18,2 (R$ 0,00)
             foreach (var property in modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetProperties())
                 .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
