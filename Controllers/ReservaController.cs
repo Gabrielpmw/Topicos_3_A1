@@ -23,9 +23,16 @@ namespace restaurante.Controllers
             _userManager = userManager;
         }
 
+        // --- BUSCA DE MESAS LIVRES ---
         [HttpGet]
         public async Task<IActionResult> ObterMesasDisponiveis(DateTime dataHora)
         {
+            // Bloqueio de segurança no servidor para busca de mesas no mesmo dia
+            if (dataHora.Date <= DateTime.Today)
+            {
+                return Json(new { erro = "Reservas só podem ser consultadas com 1 dia de antecedência." });
+            }
+
             DateTime fimPretendido = dataHora.AddHours(3);
             DateTime limiteInferior = dataHora.AddHours(-3);
 
@@ -49,11 +56,24 @@ namespace restaurante.Controllers
             return Json(mesasDisponiveis);
         }
 
+        // --- CONFIRMAÇÃO DE RESERVA (COM TRAVA DE 1 DIA) ---
         [HttpPost]
         public async Task<IActionResult> ConfirmarReserva([FromBody] NovaReservaViewModel model)
         {
             var usuario = await _userManager.GetUserAsync(User);
             if (usuario == null) return Unauthorized();
+
+            // BLOQUEIO: Administradores não podem realizar reservas
+            if (await _userManager.IsInRoleAsync(usuario, "Admin"))
+            {
+                return BadRequest("Administradores não possuem permissão para realizar reservas de mesas.");
+            }
+
+            // REGRA DE NEGÓCIO: Antecedência mínima de 1 dia
+            if (model.DataHora.Date <= DateTime.Today)
+            {
+                return BadRequest("As reservas devem ser realizadas com pelo menos um dia de antecedência.");
+            }
 
             DateTime fimNova = model.DataHora.AddHours(2);
             DateTime limiteInferior = model.DataHora.AddHours(-2);
@@ -64,7 +84,7 @@ namespace restaurante.Controllers
                 r.DataHoraReserva > limiteInferior);
 
             if (conflito)
-                return BadRequest("Desculpe, esta mesa acabou de ser reservada para este horário. Escolha outra mesa.");
+                return BadRequest("Desculpe, esta mesa acabou de ser reservada para este horário por outra pessoa.");
 
             string codigoGerado = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
 
@@ -86,16 +106,13 @@ namespace restaurante.Controllers
             });
         }
 
-        // =========================================================
-        // COLOQUE ESTE MÉTODO AQUI, ANTES DE FECHAR AS CHAVES!
-        // =========================================================
+        // --- LISTAGEM DE RESERVAS DO USUÁRIO ---
         [HttpGet]
         public async Task<IActionResult> ObterMinhasReservas()
         {
             var usuario = await _userManager.GetUserAsync(User);
             if (usuario == null) return Unauthorized();
 
-            // Puxa as reservas do banco de dados já incluindo os dados da Mesa
             var reservas = await _context.Reservas
                 .Include(r => r.Mesa)
                 .Where(r => r.UsuarioId == usuario.Id)
@@ -105,6 +122,7 @@ namespace restaurante.Controllers
             return PartialView("_MinhasReservas", reservas);
         }
 
+        // --- CANCELAMENTO COM REGRA DE MULTA ---
         [HttpPost]
         public async Task<IActionResult> CancelarReserva(int id)
         {
@@ -117,17 +135,15 @@ namespace restaurante.Controllers
             if (reserva.DataHoraReserva < DateTime.Now)
                 return BadRequest("Não é possível cancelar uma reserva de uma data que já passou.");
 
-            // Calcula a diferença de horas
             var horasRestantes = (reserva.DataHoraReserva - DateTime.Now).TotalHours;
 
-            // Remove a reserva para liberar a mesa no banco
             _context.Reservas.Remove(reserva);
             await _context.SaveChangesAsync();
 
-            // Regra da Multa de 6 horas
+            // REGRA DA MULTA: Menos de 6 horas para o evento
             if (horasRestantes < 6)
             {
-                return Ok(new { mensagem = "Sua reserva foi cancelada. ATENÇÃO: Como o cancelamento foi feito com menos de 6 horas de antecedência, uma multa de R$ 50,00 foi registrada em seu nome." });
+                return Ok(new { mensagem = "Sua reserva foi cancelada. ATENÇÃO: Como o cancelamento foi feito com menos de 6 horas de antecedência, uma multa de R$ 50,00 foi registrada em sua conta conforme as políticas do restaurante." });
             }
 
             return Ok(new { mensagem = "Reserva cancelada com sucesso sem cobrança de multas." });

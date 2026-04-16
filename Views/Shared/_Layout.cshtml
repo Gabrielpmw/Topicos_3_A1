@@ -268,7 +268,9 @@
             
             <form id="formItemCardapio" onsubmit="salvarItemCardapio(event)">
                 <input type="hidden" id="itemId">
-                <input type="hidden" id="itemImagemUrlAntiga"> <div class="form-group">
+                <input type="hidden" id="itemImagemUrlAntiga"> 
+                
+                <div class="form-group">
                     <label>Nome do Prato</label>
                     <input type="text" id="itemNome" class="form-input" required>
                 </div>
@@ -280,7 +282,8 @@
                 <div class="form-group">
                     <label>Foto do Prato</label>
                     <input type="file" id="itemImagemArquivo" class="form-input" accept="image/*">
-                    <small id="textoImagemAtual" style="color: var(--gold); display: block; margin-top: 5px; font-weight: bold;"></small> </div>
+                    <small id="textoImagemAtual" style="color: var(--gold); display: block; margin-top: 5px; font-weight: bold;"></small> 
+                </div>
 
                 <div class="form-row">
                     <div class="form-group">
@@ -361,7 +364,6 @@
         // ========================================================
         // 1. SISTEMA DE ALERTAS E CONFIRMAÇÕES (UI PERSONALIZADA)
         // ========================================================
-        
         window.alert = function(msg) {
             const modal = document.getElementById('customAlertModal');
             const mensagemTexto = document.getElementById('customAlertMensagem');
@@ -370,7 +372,7 @@
 
             mensagemTexto.innerText = msg;
             
-            if(msg.toLowerCase().includes("sucesso")) {
+            if(msg.toLowerCase().includes("sucesso") || msg.toLowerCase().includes("certo")) {
                 title.innerText = "Tudo Certo!";
                 title.style.color = "#22c55e";
                 icon.innerHTML = "✔️";
@@ -406,7 +408,25 @@
         }
 
         // ========================================================
-        // 2. LÓGICA DE VALIDAÇÃO DE SEGURANÇA (SENHA)
+        // 2. ATUALIZAÇÃO AUTOMÁTICA DE PEDIDOS E RELATÓRIOS (20s)
+        // ========================================================
+        setInterval(function() {
+            const modalPerfil = document.getElementById('perfilModal');
+            
+            if (modalPerfil && modalPerfil.style.display === 'flex') {
+                const abaPedidosAtiva = document.getElementById('btnAbaPedidos')?.classList.contains('active');
+                const abaRelatoriosAtiva = document.getElementById('btnAbaRelatorios')?.classList.contains('active');
+
+                if (abaPedidosAtiva) {
+                    carregarAba('Pedidos');
+                } else if (abaRelatoriosAtiva) {
+                    carregarAba('Relatorios');
+                }
+            }
+        }, 20000); 
+
+        // ========================================================
+        // 3. LÓGICA DE VALIDAÇÃO DE SEGURANÇA (SENHA)
         // ========================================================
         function validarForcaDaSenha(senha) {
             const regexMaiuscula = /[A-Z]/;
@@ -422,7 +442,7 @@
         }
 
         // ========================================================
-        // 3. COMUNICAÇÃO AJAX (CADASTRO E RECUPERAÇÃO)
+        // 4. COMUNICAÇÃO AJAX (CADASTRO E RECUPERAÇÃO)
         // ========================================================
         function enviarCadastroAjax(event) {
             event.preventDefault(); 
@@ -522,7 +542,7 @@
         }
 
         // ========================================================
-        // --- FUNÇÕES DE ENDEREÇO FORMATO PALMAS COM VIACEP (AJAX) ---
+        // 5. FUNÇÕES DE ENDEREÇO (VIACEP E CRUD)
         // ========================================================
         function buscarCepNaApi() {
             const cep = document.getElementById('endCep').value;
@@ -595,13 +615,15 @@
         }
 
         function removerEndereco(id) {
-            if(confirm("Deseja remover este endereço?")) {
+            perguntar("Deseja remover este endereço?", function() {
                 fetch('/Conta/RemoverEndereco/' + id, { method: 'POST' })
                     .then(() => carregarAba('Enderecos'));
-            }
+            });
         }
 
-        // --- MODAIS GERAIS ---
+        // ========================================================
+        // 6. MODAIS GERAIS (LOGIN E PERFIL)
+        // ========================================================
         function abrirModal() { 
             fecharModalLogin();
             document.getElementById('modalCadastro').style.display = 'flex'; 
@@ -617,7 +639,6 @@
         }
         function fecharModalRecuperacao() { document.getElementById('modalRecuperarSenha').style.display = 'none'; }
 
-        // --- MODAL DE PERFIL E ABAS ---
         function abrirPerfil() {
             document.getElementById('perfilModal').style.display = 'flex';
             carregarAba(document.getElementById('btnAbaDados') ? 'Dados' : 'Pratos');
@@ -650,7 +671,9 @@
             carregarAba('Pedidos');
         }
 
-        // --- LÓGICA DE CANCELAMENTO DE RESERVAS ---
+        // ========================================================
+        // 7. CANCELAMENTO E EXCLUSÃO DE CONTAS
+        // ========================================================
         function cancelarReserva(id, dataReservaStr) {
             const dataReserva = new Date(dataReservaStr);
             const agora = new Date();
@@ -662,7 +685,7 @@
                 msgConfirmacao = "ATENÇÃO: Faltam menos de 6 horas para a sua reserva!\n\nDe acordo com as nossas políticas, será cobrada uma multa de R$ 50,00 pelo cancelamento tardio.\n\nDeseja cancelar mesmo assim?";
             }
 
-            if (confirm(msgConfirmacao)) {
+            perguntar(msgConfirmacao, function() {
                 fetch('/Reserva/CancelarReserva/' + id, { method: 'POST' })
                 .then(async res => {
                     if (res.ok) {
@@ -673,11 +696,11 @@
                         alert(await res.text());
                     }
                 });
-            }
+            });
         }
 
         function desativarMinhaConta() {
-            if(confirm("ATENÇÃO: Tem certeza absoluta que deseja desativar sua conta? Você será desconectado imediatamente.")) {
+            perguntar("ATENÇÃO: Tem certeza absoluta que deseja desativar sua conta? Você será desconectado imediatamente.", function() {
                 fetch('/Conta/DesativarConta', { method: 'POST' })
                 .then(async response => {
                     if(response.ok) {
@@ -689,11 +712,11 @@
                 }).catch(() => {
                     alert("Erro de conexão com o servidor.");
                 });
-            }
+            });
         }
 
         // ========================================================
-        // CARDÁPIO E INGREDIENTES (ATUALIZADO PARA IMAGEM E SOFT DELETE)
+        // 8. CARDÁPIO E INGREDIENTES (ADMINISTRADOR)
         // ========================================================
         let ingredientesChecadosGlobal = [];
 
@@ -715,7 +738,6 @@
                         const isChecked = ingredientesChecadosGlobal.includes(ing.id) ? 'checked' : '';
                         
                         if (ing.isAtivo) {
-                            // Ingrediente Ativo - Renderiza normal
                             container.innerHTML += `
                                 <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                                     <label style="display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; flex: 1;">
@@ -729,7 +751,6 @@
                                 </div>
                             `;
                         } else {
-                            // Ingrediente Inativo - Soft Delete visual
                             container.innerHTML += `
                                 <div class="ingrediente-row" id="ing-row-${ing.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0.5;">
                                     <div style="display: flex; align-items: center; gap: 10px; margin: 0; flex: 1;">
@@ -781,21 +802,19 @@
             });
         }
 
-        // Lógica de Ativar/Desativar ingrediente para o Admin
         function alternarStatusIngrediente(id, ativando) {
             const acao = ativando ? "ativar" : "desativar";
-            if(confirm(`Deseja ${acao} este ingrediente?`)) {
+            perguntar(`Deseja ${acao} este ingrediente?`, function() {
                 fetch(`/Admin/AlternarStatusIngrediente/${id}`, { method: 'POST' })
                     .then(response => {
                         if(response.ok) {
                             if (!ativando) {
-                                // Remove da lista de selecionados se for desativado
                                 ingredientesChecadosGlobal = ingredientesChecadosGlobal.filter(i => i !== id);
                             }
                             carregarIngredientesNoSelect(ingredientesChecadosGlobal);
                         }
                     });
-            }
+            });
         }
 
         function salvarNovoIngrediente() {
@@ -817,7 +836,6 @@
 
         function confirmarTrocaStatusPrato(id, acao) {
             perguntar(`Deseja realmente ${acao} este prato do cardápio?`, function() {
-                
                 fetch(`/Admin/AlternarStatusPrato?id=${id}`, { method: 'POST' })
                     .then(async res => {
                         if (res.ok) {
@@ -848,9 +866,6 @@
             });
         }
 
-        // ========================================================
-        // ABRIR E SALVAR O MODAL DO PRATO (ATUALIZADO PARA IMAGENS)
-        // ========================================================
         function abrirModalItemCardapio(id = null, nome = '', desc = '', preco = '', periodo = '0', imagemUrl = '', ingredientesSelecionados = '[]') {
             document.getElementById('itemId').value = id || '';
             document.getElementById('itemNome').value = nome;
@@ -858,12 +873,10 @@
             document.getElementById('itemPreco').value = preco;
             document.getElementById('itemPeriodo').value = periodo;
             
-            // NOVO: Tratamento da Imagem
-            document.getElementById('itemImagemUrlAntiga').value = imagemUrl; // Salva a foto atual
+            document.getElementById('itemImagemUrlAntiga').value = imagemUrl; 
             const inputFile = document.getElementById('itemImagemArquivo');
-            if (inputFile) inputFile.value = ''; // O navegador força isso a ser vazio
+            if (inputFile) inputFile.value = ''; 
             
-            // NOVO: Mostra o aviso para o Admin se já tiver uma foto salva
             const textoImg = document.getElementById('textoImagemAtual');
             if (id && imagemUrl && imagemUrl !== '/sem-foto.png') {
                 textoImg.innerHTML = `🖼️ Este prato já possui imagem. Só anexe um novo arquivo se quiser trocá-la.`;
@@ -882,11 +895,9 @@
             document.getElementById('itemCardapioModal').style.display = 'none';
         }
 
-        // Envia os dados usando FormData para suportar arquivo
         function salvarItemCardapio(e) {
             e.preventDefault();
 
-            // A MÁGICA DO UPLOAD: FormData permite empacotar arquivos e textos juntos
             const formData = new FormData();
             
             const id = document.getElementById('itemId').value;
@@ -894,20 +905,14 @@
             
             formData.append('Nome', document.getElementById('itemNome').value);
             formData.append('Descricao', document.getElementById('itemDescricao').value);
-            
-            // Corrige vírgulas para o formato americano aceito no C# decimal
             formData.append('PrecoBase', document.getElementById('itemPreco').value.replace(',', '.'));
             formData.append('Periodo', document.getElementById('itemPeriodo').value);
-
-            // NOVO: Envia a URL antiga de volta. Assim o banco não apaga a foto se o usuário não enviar uma nova
             formData.append('ImagemUrl', document.getElementById('itemImagemUrlAntiga').value);
 
-            // Anexa os ids dos ingredientes
             ingredientesChecadosGlobal.forEach(ingId => {
                 formData.append('IngredientesIds', ingId);
             });
 
-            // Anexa o arquivo de imagem, se houver
             const fileInput = document.getElementById('itemImagemArquivo');
             if (fileInput && fileInput.files.length > 0) {
                 formData.append('imagemArquivo', fileInput.files[0]);
@@ -915,7 +920,7 @@
 
             fetch('/Admin/SalvarItemCardapio', {
                 method: 'POST',
-                body: formData // Não se coloca Content-Type com FormData, o navegador faz isso
+                body: formData 
             }).then(async (response) => {
                 if (response.ok) {
                     fecharModalItemCardapio();
@@ -930,13 +935,15 @@
         }
 
         function removerItemCardapio(id) {
-            if(confirm("Deseja remover este prato do cardápio permanentemente?")) {
+            perguntar("Deseja remover este prato do cardápio permanentemente?", function() {
                 fetch('/Admin/RemoverItemCardapio/' + id, { method: 'POST' })
                     .then(() => carregarAba('Pratos'));
-            }
+            });
         }
 
-        // --- FUNÇÕES DE SUGESTÃO DO CHEFE (ADMIN) ---
+        // ========================================================
+        // 9. FUNÇÕES EXTRAS DO ADMIN (SUGESTÕES E USUÁRIOS)
+        // ========================================================
         function definirSugestaoManual(id) {
             fetch(`/Admin/DefinirSugestao?pratoId=${id}`, { method: 'POST' })
                 .then(response => {
@@ -953,7 +960,6 @@
                 });
         }
 
-        // --- FUNÇÕES DE USUÁRIOS (ADMIN) ---
         function toggleUsuariosInativos() {
             const mostrar = document.getElementById('chkMostrarInativos').checked;
             $("#perfilContent").html('<p style="color: white; text-align:center;">Carregando...</p>');
@@ -963,7 +969,7 @@
         function alternarStatusUsuario(id, desativando) {
             const acao = desativando ? "desativar" : "reativar";
             
-            if (confirm(`Tem certeza que deseja ${acao} este usuário?`)) {
+            perguntar(`Tem certeza que deseja ${acao} este usuário?`, function() {
                 fetch(`/Admin/AlternarStatusUsuario/${id}`, { method: 'POST' })
                 .then(async response => {
                     if (response.ok) {
@@ -973,15 +979,17 @@
                         alert(msg || `Erro ao ${acao} o usuário.`);
                     }
                 }).catch(() => alert("Erro crítico de conexão com o servidor."));
-            }
+            });
         }
 
-        // --- FECHAR MODAIS CLICANDO FORA ---
+        // ========================================================
+        // 10. FECHAR MODAIS CLICANDO FORA
+        // ========================================================
         window.onclick = function (event) {
             const IDs = ['modalCadastro', 'modalLogin', 'modalRecuperarSenha', 'perfilModal', 'enderecoModal', 'customConfirmModal', 'itemCardapioModal'];
             IDs.forEach(id => {
                 const el = document.getElementById(id);
-                if (e.target == el && el != null) el.style.display = 'none';
+                if (event.target == el && el != null) el.style.display = 'none';
             });
         }
     </script>
@@ -994,6 +1002,7 @@
                 alert(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["MensagemErroSistema"])));
             });
         </script>
+    }
     }
     
     @await RenderSectionAsync("Scripts", required: false)

@@ -343,16 +343,14 @@
                 <img src="~/img/MapaMesas.png" alt="Mapa do Restaurante" style="width: 100%; border-radius: 8px;">
             </div>
             <div style="background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155;">
-                @if (!User.Identity.IsAuthenticated)
-                {
-                    <div style="text-align: center; padding: 40px 0;">
-                        <p style="color: var(--text-gray); margin-bottom: 20px;">Você precisa estar logado para fazer uma reserva.</p>
-                        <button onclick="abrirModalLogin()" class="btn-gold" style="padding: 10px 20px; border-radius: 8px; border: none;">Fazer Login</button>
-                    </div>
-                }
-                else
+                @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin")) 
                 {
                     <form id="formReserva" onsubmit="confirmarReserva(event)">
+                        <div style="background: rgba(212, 175, 55, 0.1); border-left: 4px solid var(--gold); padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+                            <p style="color: #cbd5e1; font-size: 0.85rem; margin: 0; line-height: 1.5;">
+                                ⚠️ <strong>Atenção:</strong> Reservas exigem no mínimo 24h de antecedência.
+                            </p>
+                        </div>
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label style="color: white; margin-bottom: 8px; display: block;">Data</label>
                             <input type="date" id="reservaData" class="form-input" style="width: 100%; padding: 12px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #334155;" required onchange="buscarMesas()">
@@ -376,6 +374,19 @@
                         </div>
                         <button type="submit" id="btnReservar" class="btn-gold" style="width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" disabled>Confirmar Reserva</button>
                     </form>
+                }
+                else if (User.IsInRole("Admin"))
+                {
+                    <div style="text-align: center; padding: 40px 0;">
+                        <p style="color: var(--gold); font-weight: bold;">Administradores não podem realizar reservas de mesas.</p>
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 40px 0;">
+                        <p style="color: var(--text-gray); margin-bottom: 20px;">Você precisa estar logado para fazer uma reserva.</p>
+                        <button onclick="abrirModalLogin()" class="btn-gold" style="padding: 10px 20px; border-radius: 8px; border: none;">Fazer Login</button>
+                    </div>
                 }
             </div>
         </div>
@@ -443,10 +454,12 @@
             if (res.ok) {
                 let enderecos = await res.json();
                 let select = document.getElementById('enderecoSelect');
-                select.innerHTML = '<option value="">Selecione um endereço salvo...</option>';
-                enderecos.forEach(e => {
-                    select.innerHTML += `<option value="${e.id}">${e.quadra}, ${e.alameda}, Lote ${e.lote}</option>`;
-                });
+                if(select){
+                    select.innerHTML = '<option value="">Selecione um endereço salvo...</option>';
+                    enderecos.forEach(e => {
+                        select.innerHTML += `<option value="${e.id}">${e.quadra}, ${e.alameda}, Lote ${e.lote}</option>`;
+                    });
+                }
             }
         } catch(e) { console.error("Erro ao carregar endereços", e); }
     }
@@ -508,7 +521,8 @@
 
     function abrirModalPagamento() {
         if(carrinho.length === 0) { alert("Adicione itens ao carrinho!"); return; }
-        let enderecoId = document.getElementById('enderecoSelect').value;
+        let selectEnd = document.getElementById('enderecoSelect');
+        let enderecoId = selectEnd ? selectEnd.value : null;
         if(tipoEntrega !== 0 && !enderecoId) { alert("Selecione um endereço para a entrega!"); return; }
         document.getElementById('chavePixGerada').value = "00020126580014br.gov.bcb.pix0136" + Math.random().toString(36).substring(2,12) + "5204000053039865802BR5914Palmas6009SaborArte62070503***63044A1B";
         document.getElementById('btnPagarRetirada').style.display = tipoEntrega === 0 ? 'block' : 'none';
@@ -519,8 +533,8 @@
         let payload = {
             Itens: carrinho.map(i => ({ Id: i.id, Quantidade: i.qtd })),
             TipoAtendimento: tipoEntrega,
-            EnderecoId: document.getElementById('enderecoSelect').value ? parseInt(document.getElementById('enderecoSelect').value) : null,
-            NomeApp: document.getElementById('appSelect').value,
+            EnderecoId: document.getElementById('enderecoSelect')?.value ? parseInt(document.getElementById('enderecoSelect').value) : null,
+            NomeApp: document.getElementById('appSelect')?.value,
             MetodoPagamento: metodoSelecionado 
         };
         fetch('/Pedido/CriarPedido', {
@@ -534,39 +548,67 @@
     }
 
     function buscarMesas() {
-        const data = document.getElementById('reservaData').value;
-        const hora = document.getElementById('reservaHora').value;
+        const data = document.getElementById('reservaData')?.value;
+        const hora = document.getElementById('reservaHora')?.value;
         const selectMesa = document.getElementById('reservaMesa');
         const btnReservar = document.getElementById('btnReservar');
-        if (!data || !hora) return;
+        if (!data || !hora || !selectMesa) return;
         selectMesa.innerHTML = '<option value="">Buscando mesas...</option>';
         const dataHoraStr = `${data}T${hora.padStart(2, '0')}:00:00`;
         fetch(`/Reserva/ObterMesasDisponiveis?dataHora=${dataHoraStr}`)
             .then(res => res.json())
             .then(mesas => {
                 selectMesa.innerHTML = '';
-                if (mesas.length === 0) { selectMesa.innerHTML = '<option value="">Sem mesas livres.</option>'; btnReservar.disabled = true; } 
-                else {
-                    selectMesa.innerHTML = '<option value="">Selecione...</option>';
-                    mesas.forEach(m => { selectMesa.innerHTML += `<option value="${m.id}">Mesa ${m.numero} (${m.capacidade}p)</option>`; });
-                    selectMesa.disabled = false; btnReservar.disabled = false;
+                if (mesas.erro) { 
+                    alert(mesas.erro); 
+                    selectMesa.innerHTML = '<option value="">Data indisponível.</option>'; 
+                    if(btnReservar) btnReservar.disabled = true; 
+                    return; 
                 }
+                if (mesas.length === 0) { 
+                    selectMesa.innerHTML = '<option value="">Sem mesas livres neste horário.</option>'; 
+                    if(btnReservar) btnReservar.disabled = true; 
+                } 
+                else {
+                    selectMesa.innerHTML = '<option value="">Selecione a mesa desejada...</option>';
+                    mesas.forEach(m => { selectMesa.innerHTML += `<option value="${m.id}">Mesa ${m.numero} (${m.capacidade} pessoas)</option>`; });
+                    selectMesa.disabled = false; if(btnReservar) btnReservar.disabled = false;
+                }
+            })
+            .catch(() => {
+                alert("Erro de conexão ao buscar mesas.");
             });
     }
 
     function confirmarReserva(e) {
         e.preventDefault();
-        const payload = { DataHora: `${document.getElementById('reservaData').value}T${document.getElementById('reservaHora').value.padStart(2, '0')}:00:00`, MesaId: parseInt(document.getElementById('reservaMesa').value) };
+        const dataVal = document.getElementById('reservaData')?.value;
+        const horaVal = document.getElementById('reservaHora')?.value;
+        const mesaVal = document.getElementById('reservaMesa')?.value;
+        const payload = { DataHora: `${dataVal}T${horaVal.padStart(2, '0')}:00:00`, MesaId: parseInt(mesaVal) };
         fetch('/Reserva/ConfirmarReserva', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
         .then(async res => {
-            if(res.ok) { const data = await res.json(); alert(`${data.mensagem}\nCódigo: ${data.codigo}`); buscarMesas(); }
-            else { alert("Erro: " + await res.text()); }
+            if(res.ok) { 
+                const data = await res.json(); 
+                alert(`${data.mensagem}\n\nCódigo de Confirmação: ${data.codigo}`); 
+                buscarMesas(); 
+            }
+            else { alert(await res.text()); }
         });
     }
 
     window.onload = function() {
         carregarEnderecos(); 
-        const hoje = new Date().toISOString().split('T')[0];
-        if(document.getElementById('reservaData')) document.getElementById('reservaData').setAttribute('min', hoje);
+        
+        // REGRA: Reserva exige 1 dia de antecedência
+        const amanha = new Date();
+        amanha.setDate(amanha.getDate() + 1);
+        
+        const amanhaStr = amanha.toISOString().split('T')[0];
+        const inputData = document.getElementById('reservaData');
+        
+        if(inputData) {
+            inputData.setAttribute('min', amanhaStr);
+        }
     };
 </script>

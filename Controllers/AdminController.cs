@@ -20,7 +20,7 @@ namespace restaurante.Controllers
     {
         private readonly RestauranteContext _context;
         private readonly UserManager<Usuario> _userManager;
-        private readonly IWebHostEnvironment _webHostEnvironment; // NOVO: Permite salvar o arquivo fisicamente na pasta wwwroot
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         // Injeção do IWebHostEnvironment adicionada ao construtor
         public AdminController(RestauranteContext context, UserManager<Usuario> userManager, IWebHostEnvironment webHostEnvironment)
@@ -55,7 +55,7 @@ namespace restaurante.Controllers
                     PrecoBase = i.PrecoBase,
                     Periodo = (int)i.Periodo,
                     IsAtivo = i.IsAtivo,
-                    ImagemUrl = i.ImagemUrl, // Adicionado para carregar a imagem na tela
+                    ImagemUrl = i.ImagemUrl,
                     IngredientesIds = i.Ingredientes
                                         .Where(ing => ing.IsAtivo)
                                         .Select(ing => ing.Id)
@@ -65,14 +65,13 @@ namespace restaurante.Controllers
             return PartialView("_GerenciarCardapio", itens);
         }
 
-        // NOVO: Mudamos para [FromForm] para suportar envio de arquivos, e adicionamos o IFormFile
         [HttpPost]
         public async Task<IActionResult> SalvarItemCardapio([FromForm] ItemCardapioViewModel model, IFormFile imagemArquivo)
         {
             // Removemos a validação padrão de texto da URL porque agora tratamos o arquivo físico
             ModelState.Remove("ImagemUrl");
 
-            // CORREÇÃO: Avisamos ao C# para não dar erro se o usuário não enviar nenhum arquivo físico
+            // Avisamos ao C# para não dar erro se o usuário não enviar nenhum arquivo físico
             ModelState.Remove("imagemArquivo");
 
             if (!ModelState.IsValid)
@@ -154,7 +153,7 @@ namespace restaurante.Controllers
                         Descricao = model.Descricao,
                         PrecoBase = model.PrecoBase,
                         Periodo = (ItemCardapio.PeriodoCardapio)model.Periodo,
-                        ImagemUrl = model.ImagemUrl, // Vai salvar a foto enviada ou a /sem-foto.png
+                        ImagemUrl = model.ImagemUrl,
                         IsAtivo = true,
                         Ingredientes = ingredientesSelecionados
                     };
@@ -192,7 +191,6 @@ namespace restaurante.Controllers
         [HttpGet]
         public async Task<IActionResult> ObterIngredientes()
         {
-            // Alterado para trazer todos (ativos e inativos) ordenados
             var ingredientes = await _context.Ingredientes
                 .Select(i => new { i.Id, i.Nome, i.IsAtivo })
                 .OrderByDescending(i => i.IsAtivo)
@@ -372,6 +370,7 @@ namespace restaurante.Controllers
                 .Include(p => p.ItensPedido)
                     .ThenInclude(i => i.ItemCardapio)
                 .Where(p => p.DataHora >= inicio && p.DataHora <= fimAjustado && !p.IsCancelado)
+                .OrderByDescending(p => p.DataHora) // GARANTE OS MAIS RECENTES NO TOPO PARA O REFRESH DE 20S
                 .ToListAsync();
 
             var relatorio = new RelatorioViewModel

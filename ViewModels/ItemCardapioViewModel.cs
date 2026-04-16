@@ -14,7 +14,7 @@ namespace restaurante.ViewModels
         public string Descricao { get; set; }
 
         [Required(ErrorMessage = "O preço é obrigatório.")]
-        [Range(0.01, 999.99, ErrorMessage = "O preço deve ser maior que zero.")]
+        [Range(0.01, 999999.99, ErrorMessage = "O preço deve ser maior que zero.")]
         public decimal PrecoBase { get; set; }
 
         [Required(ErrorMessage = "O período (Almoço/Jantar) é obrigatório.")]
