@@ -309,5 +309,60 @@ namespace restaurante.Controllers
 
             return await DefinirSugestao(pratoSorteado.Id);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> ObterRelatorios(DateTime? dataInicio, DateTime? dataFim)
+        {
+            // Define um período padrão (últimos 30 dias) se o usuário não escolher uma data
+            DateTime inicio = dataInicio ?? DateTime.Today.AddDays(-30);
+            DateTime fim = dataFim ?? DateTime.Today;
+
+            // Ajusta o horário final para pegar até as 23:59:59 do dia escolhido
+            DateTime fimAjustado = fim.Date.AddDays(1).AddTicks(-1);
+
+            // Busca todos os pedidos concluídos no período
+            var pedidosPeriodo = await _context.Pedidos
+                .Include(p => p.Atendimento)
+                .Include(p => p.ItensPedido)
+                    .ThenInclude(i => i.ItemCardapio)
+                .Where(p => p.DataHora >= inicio && p.DataHora <= fimAjustado && !p.IsCancelado)
+                .ToListAsync();
+
+            var relatorio = new RelatorioViewModel
+            {
+                DataInicio = inicio,
+                DataFim = fim
+            };
+
+            // 1. Faturamento por Tipo de Atendimento
+            relatorio.FaturamentoPresencial = pedidosPeriodo
+                .Where(p => p.Atendimento is AtendimentoRetirada) // Na nossa lógica, Retirada = Presencial
+                .Sum(p => p.PrecoFinal);
+
+            relatorio.FaturamentoDeliveryProprio = pedidosPeriodo
+                .Where(p => p.Atendimento is AtendimentoDeliveryProprio)
+                .Sum(p => p.PrecoFinal);
+
+            relatorio.FaturamentoDeliveryApp = pedidosPeriodo
+                .Where(p => p.Atendimento is AtendimentoDeliveryApp)
+                .Sum(p => p.PrecoFinal);
+
+            // 2. Itens Mais Vendidos (Com e Sem Sugestão)
+            relatorio.ItensMaisVendidos = pedidosPeriodo
+                .SelectMany(p => p.ItensPedido)
+                .GroupBy(i => i.ItemCardapio.Nome)
+                .Select(g => new ItemVendidoViewModel
+                {
+                    NomePrato = g.Key,
+                    QuantidadeTotal = g.Sum(i => i.Quantidade),
+                    // A MÁGICA: Se o preço unitário cobrado foi menor que o preço base da tabela, foi Sugestão!
+                    QuantidadeComoSugestao = g.Where(i => i.PrecoUnitario < i.ItemCardapio.PrecoBase).Sum(i => i.Quantidade)
+                })
+                .OrderByDescending(i => i.QuantidadeTotal) // Ordena do mais vendido para o menos vendido
+                .Take(15) // Pega os 15 mais vendidos
+                .ToList();
+
+            return PartialView("_Relatorios", relatorio);
+        }
     }
 }

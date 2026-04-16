@@ -289,6 +289,12 @@
                     $("#perfilContent").html('<p style="color: white;">Carregando...</p>');
                     $("#perfilContent").load("/Admin/ObterUsuarios?mostrarInativos=false");
                 }
+                // --- NOVA ABA DE RELATÓRIOS ---
+                else if (aba === 'Relatorios' && document.getElementById('btnAbaRelatorios')) {
+                    $("#btnAbaRelatorios").addClass("active");
+                    $("#perfilContent").html('<div style="text-align: center; color: var(--gold); margin-top: 50px;">Carregando relatórios...</div>');
+                    $("#perfilContent").load("/Admin/ObterRelatorios");
+                }
                 else {
                     $("#perfilContent").html('<h3 style="color: var(--gold);">' + aba + '</h3><p style="color: white;">Em breve!</p>');
                 }
@@ -303,12 +309,9 @@
                 const dataReserva = new Date(dataReservaStr);
                 const agora = new Date();
                 
-                // Calcula a diferença em horas
                 const horasDiferenca = (dataReserva - agora) / (1000 * 60 * 60);
-
                 let msgConfirmacao = "Tem certeza que deseja cancelar esta reserva?";
                 
-                // Se faltar menos de 6 horas, mostra o aviso da multa
                 if (horasDiferenca < 6) {
                     msgConfirmacao = "ATENÇÃO: Faltam menos de 6 horas para a sua reserva!\n\nDe acordo com as nossas políticas, será cobrada uma multa de R$ 50,00 pelo cancelamento tardio.\n\nDeseja cancelar mesmo assim?";
                 }
@@ -319,7 +322,7 @@
                         if (res.ok) {
                             const data = await res.json();
                             alert(data.mensagem);
-                            carregarAba('Reservas'); // Atualiza a aba na hora, a reserva vai sumir!
+                            carregarAba('Reservas');
                         } else {
                             alert(await res.text());
                         }

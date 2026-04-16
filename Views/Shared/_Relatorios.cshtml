@@ -1,0 +1,89 @@
+﻿@model restaurante.ViewModels.RelatorioViewModel
+
+<h3 style="color: var(--gold); margin-bottom: 20px;">Relatórios Gerenciais</h3>
+
+<div style="background: rgba(15, 23, 42, 0.5); padding: 20px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 25px;">
+    <form id="formFiltroRelatorio" onsubmit="filtrarRelatorio(event)" style="display: flex; gap: 15px; align-items: flex-end;">
+        <div style="flex: 1;">
+            <label style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Início</label>
+            <input type="date" id="dataInicioFiltro" value="@Model.DataInicio.ToString("yyyy-MM-dd")" class="form-input" style="width: 100%;">
+        </div>
+        <div style="flex: 1;">
+            <label style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Fim</label>
+            <input type="date" id="dataFimFiltro" value="@Model.DataFim.ToString("yyyy-MM-dd")" class="form-input" style="width: 100%;">
+        </div>
+        <button type="submit" class="btn-gold" style="padding: 10px 30px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer;">
+            Filtrar
+        </button>
+    </form>
+</div>
+
+<h4 style="color: white; margin-bottom: 15px;">Faturamento do Período</h4>
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 35px;">
+    
+    <div style="background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
+        <span style="display: block; color: var(--text-gray); font-size: 0.85rem; margin-bottom: 5px;">Presencial</span>
+        <strong style="color: white; font-size: 1.2rem;">R$ @Model.FaturamentoPresencial.ToString("N2")</strong>
+    </div>
+
+    <div style="background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
+        <span style="display: block; color: var(--text-gray); font-size: 0.85rem; margin-bottom: 5px;">Delivery Próprio</span>
+        <strong style="color: white; font-size: 1.2rem;">R$ @Model.FaturamentoDeliveryProprio.ToString("N2")</strong>
+    </div>
+
+    <div style="background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
+        <span style="display: block; color: var(--text-gray); font-size: 0.85rem; margin-bottom: 5px;">Delivery App</span>
+        <strong style="color: white; font-size: 1.2rem;">R$ @Model.FaturamentoDeliveryApp.ToString("N2")</strong>
+    </div>
+
+    <div style="background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: 8px; border: 1px solid #22c55e; text-align: center;">
+        <span style="display: block; color: #22c55e; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold;">TOTAL</span>
+        <strong style="color: #22c55e; font-size: 1.4rem;">R$ @Model.FaturamentoTotal.ToString("N2")</strong>
+    </div>
+
+</div>
+
+<h4 style="color: white; margin-bottom: 15px;">Itens Mais Vendidos</h4>
+<div style="background: #1e293b; border-radius: 8px; border: 1px solid #334155; overflow: hidden;">
+    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+        <thead style="background: #0f172a;">
+            <tr>
+                <th style="padding: 12px 15px; color: var(--gold); border-bottom: 1px solid #334155;">Prato</th>
+                <th style="padding: 12px 15px; color: var(--gold); border-bottom: 1px solid #334155; text-align: center;">Venda Normal</th>
+                <th style="padding: 12px 15px; color: var(--gold); border-bottom: 1px solid #334155; text-align: center;">Como Sugestão</th>
+                <th style="padding: 12px 15px; color: var(--gold); border-bottom: 1px solid #334155; text-align: center;">Total Vendido</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.ItensMaisVendidos.Any())
+            {
+                <tr>
+                    <td colspan="4" style="padding: 20px; text-align: center; color: var(--text-gray);">Nenhum pedido encontrado neste período.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model.ItensMaisVendidos)
+                {
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 12px 15px; color: white;">@item.NomePrato</td>
+                        <td style="padding: 12px 15px; color: #94a3b8; text-align: center;">@item.QuantidadeSemSugestao un</td>
+                        <td style="padding: 12px 15px; color: #38bdf8; text-align: center;">@item.QuantidadeComoSugestao un</td>
+                        <td style="padding: 12px 15px; color: #22c55e; font-weight: bold; text-align: center;">@item.QuantidadeTotal un</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function filtrarRelatorio(e) {
+        e.preventDefault();
+        const inicio = document.getElementById('dataInicioFiltro').value;
+        const fim = document.getElementById('dataFimFiltro').value;
+        
+        $("#perfilContent").html('<div style="text-align: center; color: var(--gold); margin-top: 50px;">Gerando relatório...</div>');
+        $("#perfilContent").load(`/Admin/ObterRelatorios?dataInicio=${inicio}&dataFim=${fim}`);
+    }
+</script>
